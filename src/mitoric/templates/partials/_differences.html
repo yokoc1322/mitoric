@@ -1,0 +1,97 @@
+<section id="differences" data-section="differences" class="space-y-4">
+  <div class="section-head">
+    <h2 class="text-xl font-semibold text-white">Differences</h2>
+    <span class="text-xs uppercase tracking-wide text-[var(--color-ink-muted)]">Compare</span>
+  </div>
+  {% if payload.mode != "compare" %}
+    <div class="panel text-sm text-[var(--color-ink)]">
+      Differences are available in compare report mode.
+    </div>
+  {% else %}
+    <div class="grid gap-6 md:grid-cols-2">
+      <div class="panel">
+        <p class="panel-title">Column matches</p>
+        <table class="table-base mt-4 text-sm">
+          <tbody class="divide-y divide-slate-100">
+            <tr><td>Matched</td><td>{{ payload.comparison_summary.column_matches.matched }}</td></tr>
+            <tr><td>Left only</td><td>{{ payload.comparison_summary.column_matches.left_only }}</td></tr>
+            <tr><td>Right only</td><td>{{ payload.comparison_summary.column_matches.right_only }}</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="panel">
+        <p class="panel-title">Type mismatches</p>
+        {% if payload.comparison_summary.type_mismatches %}
+          <div class="mt-4 space-y-2 text-sm text-[var(--color-ink)]">
+            {% for mismatch in payload.comparison_summary.type_mismatches %}
+              <div class="flex items-center justify-between">
+                <span>{{ mismatch.column_name }}</span>
+                <span class="text-rose-200">{{ mismatch.left_type }} / {{ mismatch.right_type }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="mt-4 text-sm text-[var(--color-ink-muted)]">No type mismatches.</p>
+        {% endif %}
+      </div>
+    </div>
+    <div class="grid gap-6 md:grid-cols-2">
+      <div class="panel">
+        <p class="panel-title">Left-only columns</p>
+        {% if payload.comparison_summary.column_matches.column_names_left_only %}
+          <div class="mt-4 flex flex-wrap gap-2">
+            {% for column in payload.comparison_summary.column_matches.column_names_left_only %}
+              <span class="button">{{ column }}</span>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="mt-4 text-sm text-[var(--color-ink-muted)]">None.</p>
+        {% endif %}
+      </div>
+      <div class="panel">
+        <p class="panel-title">Right-only columns</p>
+        {% if payload.comparison_summary.column_matches.column_names_right_only %}
+          <div class="mt-4 flex flex-wrap gap-2">
+            {% for column in payload.comparison_summary.column_matches.column_names_right_only %}
+              <span class="button">{{ column }}</span>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="mt-4 text-sm text-[var(--color-ink-muted)]">None.</p>
+        {% endif %}
+      </div>
+    </div>
+    <div class="grid gap-6 md:grid-cols-2">
+      <div class="panel">
+        <p class="panel-title">Left-only profiles</p>
+        {% if payload.comparison_summary.column_profiles_left_only %}
+          <div class="mt-4 space-y-2 text-sm text-[var(--color-ink)]">
+            {% for profile in payload.comparison_summary.column_profiles_left_only %}
+              <div class="flex items-center justify-between">
+                <span>{{ profile.column_name }}</span>
+                <span class="text-[var(--color-ink-muted)]">{{ profile.data_type }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="mt-4 text-sm text-[var(--color-ink-muted)]">No left-only profiles.</p>
+        {% endif %}
+      </div>
+      <div class="panel">
+        <p class="panel-title">Right-only profiles</p>
+        {% if payload.comparison_summary.column_profiles_right_only %}
+          <div class="mt-4 space-y-2 text-sm text-[var(--color-ink)]">
+            {% for profile in payload.comparison_summary.column_profiles_right_only %}
+              <div class="flex items-center justify-between">
+                <span>{{ profile.column_name }}</span>
+                <span class="text-[var(--color-ink-muted)]">{{ profile.data_type }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="mt-4 text-sm text-[var(--color-ink-muted)]">No right-only profiles.</p>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+</section>

@@ -1,0 +1,44 @@
+name: pypi-smoke
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  pypi-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Install mitoric from TestPyPI
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -i https://test.pypi.org/simple/ mitoric --extra-index-url https://pypi.org/simple
+      - name: Run smoke analysis
+        run: |
+          python - <<'PY'
+          import polars as pl
+          from mitoric import generate_single_report, generate_compare_report
+
+          frame = pl.DataFrame(
+              {
+                  "age": [10, 12, 12, 14],
+                  "city": ["A", "B", "A", "C"],
+              }
+          )
+          html = generate_single_report(frame)
+          assert "<html" in html.lower()
+
+          left = pl.DataFrame({"value": [1, 2, 3]})
+          right = pl.DataFrame({"value": [2, 3, 4]})
+          compare_html = generate_compare_report(
+              left,
+              right,
+              left_name="before",
+              right_name="after",
+          )
+          assert "<html" in compare_html.lower()
+          print("mitoric smoke ok", len(html), len(compare_html))
+          PY

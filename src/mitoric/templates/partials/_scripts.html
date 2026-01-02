@@ -1,0 +1,225 @@
+<script>
+  (() => {
+    if (!window.Chart) {
+      return;
+    }
+
+    const parseHistogramData = (container) => {
+      const dataElement = container.querySelector('.js-histogram-data');
+      if (!dataElement) {
+        return null;
+      }
+      try {
+        return JSON.parse(dataElement.textContent || '{}');
+      } catch (error) {
+        return null;
+      }
+    };
+
+    const createChart = (canvas, labels, datasets, showLegend) =>
+      new window.Chart(canvas, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets,
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: showLegend,
+            },
+            tooltip: {
+              callbacks: {
+                title: (items) => (items[0] ? items[0].label : ''),
+                label: (context) => `Count: ${context.parsed.y}`,
+              },
+            },
+          },
+          scales: {
+            x: {
+              ticks: {
+                color: '#94a3b8',
+                maxRotation: 0,
+                autoSkip: true,
+              },
+              grid: {
+                display: false,
+              },
+            },
+            y: {
+              beginAtZero: true,
+              ticks: {
+                color: '#94a3b8',
+              },
+              grid: {
+                color: 'rgba(148, 163, 184, 0.15)',
+              },
+            },
+          },
+        },
+      });
+
+    const buildDatasets = (container, binData) => {
+      if (!binData) {
+        return {
+          datasets: [],
+          labels: [],
+          showLegend: false,
+        };
+      }
+      if (binData.left_counts || binData.right_counts) {
+        const leftLabel = container.getAttribute('data-left-label') || 'Left';
+        const rightLabel = container.getAttribute('data-right-label') || 'Right';
+        return {
+          labels: binData.labels || [],
+          datasets: [
+            {
+              label: leftLabel,
+              data: binData.left_counts || [],
+              backgroundColor: 'rgba(56, 189, 248, 0.65)',
+              borderColor: 'rgba(56, 189, 248, 0.9)',
+              borderWidth: 1,
+              borderRadius: 4,
+              maxBarThickness: 28,
+            },
+            {
+              label: rightLabel,
+              data: binData.right_counts || [],
+              backgroundColor: 'rgba(249, 115, 22, 0.6)',
+              borderColor: 'rgba(249, 115, 22, 0.9)',
+              borderWidth: 1,
+              borderRadius: 4,
+              maxBarThickness: 28,
+            },
+          ],
+          showLegend: true,
+        };
+      }
+      return {
+        labels: binData.labels || [],
+        datasets: [
+          {
+            data: binData.counts || [],
+            backgroundColor: 'rgba(56, 189, 248, 0.75)',
+            borderColor: 'rgba(14, 116, 144, 0.9)',
+            borderWidth: 1,
+            borderRadius: 4,
+            maxBarThickness: 28,
+          },
+        ],
+        showLegend: false,
+      };
+    };
+
+    const initializeHistogram = (container) => {
+      const data = parseHistogramData(container);
+      if (!data || !data.bins) {
+        return null;
+      }
+      const canvas = container.querySelector('.js-histogram-canvas');
+      const emptyMessage = container.querySelector('.js-histogram-empty');
+      if (!canvas) {
+        return null;
+      }
+      const bins = data.bins;
+      const availableBins = Object.keys(bins);
+      if (!availableBins.length) {
+        return null;
+      }
+      const selectBin = (binValue) =>
+        bins[binValue] || { labels: [], counts: [], left_counts: [], right_counts: [] };
+      const initialBin = container.getAttribute('data-default-bin') || availableBins[0];
+      const initialData = selectBin(initialBin);
+      const initialChartData = buildDatasets(container, initialData);
+      const chart = createChart(
+        canvas,
+        initialChartData.labels,
+        initialChartData.datasets,
+        initialChartData.showLegend
+      );
+
+      const updateEmptyState = (counts) => {
+        if (!emptyMessage) {
+          return;
+        }
+        emptyMessage.classList.toggle('hidden', counts.length > 0);
+      };
+
+      const initialCounts =
+        initialData.left_counts ||
+        initialData.right_counts ||
+        initialData.counts ||
+        [];
+      updateEmptyState(initialCounts);
+
+      return {
+        setBin: (binValue) => {
+          const binData = selectBin(binValue);
+          const chartData = buildDatasets(container, binData);
+          chart.data.labels = chartData.labels;
+          chart.data.datasets = chartData.datasets;
+          chart.update();
+          const nextCounts =
+            binData.left_counts || binData.right_counts || binData.counts || [];
+          updateEmptyState(nextCounts);
+        },
+      };
+    };
+
+    const initializedCards = new Set();
+    const binControlContainers = Array.from(document.querySelectorAll('[data-bin-controls]'));
+    binControlContainers.forEach((container) => {
+      const card = container.closest('.variable-card');
+      if (!card) {
+        return;
+      }
+      const histogramContainer = card.querySelector('.js-histogram-chart-container');
+      if (!histogramContainer) {
+        return;
+      }
+      const histogramState = initializeHistogram(histogramContainer);
+      if (!histogramState) {
+        return;
+      }
+      initializedCards.add(card);
+      const binButtons = Array.from(container.querySelectorAll('[data-bin]'));
+      if (!binButtons.length) {
+        return;
+      }
+      const setActiveBin = (binValue) => {
+        histogramState.setBin(binValue);
+        binButtons.forEach((button) => {
+          button.dataset.active = button.getAttribute('data-bin') === binValue ? 'true' : 'false';
+        });
+      };
+      const defaultBin =
+        container.getAttribute('data-default-bin') ||
+        binButtons[0].getAttribute('data-bin') ||
+        histogramContainer.getAttribute('data-default-bin');
+      if (defaultBin) {
+        setActiveBin(defaultBin);
+      }
+      binButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          const bin = button.getAttribute('data-bin');
+          if (bin) {
+            setActiveBin(bin);
+          }
+        });
+      });
+    });
+
+    const histogramContainers = Array.from(
+      document.querySelectorAll('.js-histogram-chart-container')
+    );
+    histogramContainers.forEach((container) => {
+      const card = container.closest('.variable-card');
+      if (card && initializedCards.has(card)) {
+        return;
+      }
+      initializeHistogram(container);
+    });
+  })();
+</script>

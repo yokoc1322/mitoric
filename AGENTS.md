@@ -1,0 +1,4 @@
+- Follow the Python coding rules in @docs/python_coding_rule.md.
+- After code changes, run lint, test, and test_ese and confirm there are no errors.
+- If the goal is refactoring, confirm there are no changes in the `make test_e2e` outputs at `examples/output/single_report.html` and `examples/output/compare_report.html`.
+- If there are changes, the refactoring has failed.

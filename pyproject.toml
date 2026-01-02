@@ -1,0 +1,68 @@
+[build-system]
+requires = ["hatchling>=1.28", "hatch-vcs>=0.5.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mitoric"
+description = "Polars-native EDA and comparison report generator that outputs a single self-contained HTML."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [
+    { name = "yokoc1322", email = "6673423+yokoc1322@users.noreply.github.com" },
+]
+dynamic = ["version"]
+keywords = ["polars", "data-science", "data-analysis", "python", "eda"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+urls = { "Repository" = "https://github.com/yokoc1322/mitoric" }
+dependencies = [
+    "jinja2>=3.1.6",
+    "polars>=1",     # 1.x is supported
+]
+
+[tool.hatch.version]
+source = "vcs"
+tag-pattern = "v(?P<version>.+)"
+
+[dependency-groups]
+dev = [
+    "pyright",
+    "pytest",
+    "ruff",
+]
+
+[tool.ruff.lint]
+select = [
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "SIM", # flake8-simplify
+    "PT",  # flake8-pytest-style
+]
+ignore = [
+    "E501", # line too long (handled by formatter)
+    "B008", # do not perform function calls in argument defaults
+    "B904", # raise without from in except
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mitoric"]
+
+[tool.pyright]
+extraPaths = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+markers = ["e2e: end-to-end tests that generate example reports"]

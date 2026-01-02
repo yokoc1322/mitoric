@@ -1,0 +1,1518 @@
+<section id="variables" data-section="variables" class="space-y-6">
+  <div class="section-head">
+    <h2 class="text-xl font-semibold text-white">Variables</h2>
+    <span class="text-xs uppercase tracking-wide text-[var(--color-ink-muted)]">Profiles</span>
+  </div>
+  {% if payload.mode == "single" %}
+    <div class="space-y-6">
+      {% for column in payload.column_profiles %}
+        <article class="variable-card panel panel-notch" data-column-name="{{ column.column_name }}">
+          <div class="variable-header">
+            <div class="min-w-0">
+              <h3 class="variable-name">{{ column.column_name }}</h3>
+              <p class="variable-type">{{ column.data_type }}</p>
+            </div>
+            <div class="tag">{{ column.data_type }}</div>
+          </div>
+
+          <div class="variable-body">
+            {% set is_integer = column.numeric_profile.is_integer if column.numeric_profile else false %}
+            <div class="variable-upper">
+              <div class="variable-details">
+                <div class="variable-meta">
+                  <div class="meta-row"><span>Values</span><span>{{ column.non_null_count }}</span></div>
+                  <div class="meta-row"><span>Missing</span><span>{{ column.null_count }} ({{ column.null_rate }})</span></div>
+                  <div class="meta-row"><span>Distinct</span><span>{{ column.unique_count }}</span></div>
+                  <div class="meta-row"><span>Zeroes</span><span>{{ column.zero_count }}</span></div>
+                </div>
+
+                {% if column.numeric_profile %}
+                  <div class="variable-stats-grid">
+                    <div class="stats-block">
+                      <div class="panel-title">Stats</div>
+                      <table class="table-base text-sm">
+                        <tbody class="divide-y divide-slate-100">
+                          <tr><td>Min</td><td>{{ column.numeric_profile.stats.minimum | format_number(is_integer) }}</td></tr>
+                          <tr><td>Max</td><td>{{ column.numeric_profile.stats.maximum | format_number(is_integer) }}</td></tr>
+                          <tr><td>Mean</td><td>{{ column.numeric_profile.stats.mean | format_number(is_integer) }}</td></tr>
+                          <tr><td>Median</td><td>{{ column.numeric_profile.stats.median | format_number(is_integer) }}</td></tr>
+                          <tr><td>Std</td><td>{{ column.numeric_profile.stats.std | format_number(is_integer) }}</td></tr>
+                          <tr><td>Variance</td><td>{{ column.numeric_profile.stats.variance | format_number(is_integer) }}</td></tr>
+                          <tr><td>IQR</td><td>{{ column.numeric_profile.stats.iqr | format_number(is_integer) }}</td></tr>
+                          <tr><td>Outlier rate</td><td>{{ column.numeric_profile.outlier_rate | format_number(is_integer) }}</td></tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="stats-block">
+                      <div class="panel-title">Quantiles</div>
+                      <table class="table-base text-sm">
+                        <tbody class="divide-y divide-slate-100">
+                          {% for quantile in column.numeric_profile.stats.quantiles %}
+                            <tr><td>{{ quantile.quantile }}</td><td>{{ quantile.value | format_number(is_integer) }}</td></tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                {% endif %}
+              </div>
+
+            </div>
+
+            {% if column.numeric_profile %}
+              {% if column.numeric_profile.histograms %}
+                {% set default_histogram = column.numeric_profile.histograms | first %}
+                {% set default_bin = default_histogram.bin_count if default_histogram else None %}
+                <div class="variable-visual">
+                  <div class="variable-visual-header">
+                    <div class="panel-title">Histogram</div>
+                    {% if column.numeric_profile.histograms | length > 1 %}
+                      <div class="bin-controls" data-bin-controls data-default-bin="{{ default_bin }}">
+                        {% for histogram in column.numeric_profile.histograms %}
+                          <button
+                            class="button button-compact"
+                            type="button"
+                            data-bin="{{ histogram.bin_count }}"
+                          >
+                            {{ histogram.bin_count }}
+                          </button>
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  </div>
+                  <div
+                    class="histogram-chart js-histogram-chart-container"
+                    data-default-bin="{{ default_bin }}"
+                  >
+                    <div class="histogram-canvas">
+                      <canvas class="js-histogram-canvas" aria-label="Histogram chart"></canvas>
+                    </div>
+                    <p class="text-sm text-[var(--color-ink-muted)] hidden js-histogram-empty">
+                      No histogram data.
+                    </p>
+                    <script type="application/json" class="js-histogram-data">
+                      {
+                        "bins": {
+                          {% for histogram in column.numeric_profile.histograms %}
+                            "{{ histogram.bin_count }}": {
+                              "labels": [
+                                {% if histogram.bins %}
+                                  {% for bin in histogram.bins %}
+                                    {% if bin.lower == bin.upper %}
+                                      {{ bin.lower | format_number(is_integer) | tojson }}{% if not loop.last %},{% endif %}
+                                    {% else %}
+                                      {{ ((bin.lower | format_number(is_integer)) ~ " - " ~ (bin.upper | format_number(is_integer))) | tojson }}{% if not loop.last %},{% endif %}
+                                    {% endif %}
+                                  {% endfor %}
+                                {% endif %}
+                              ],
+                              "counts": [
+                                {% if histogram.bins %}
+                                  {% for bin in histogram.bins %}
+                                    {{ bin.count }}{% if not loop.last %},{% endif %}
+                                  {% endfor %}
+                                {% endif %}
+                              ]
+                            }{% if not loop.last %},{% endif %}
+                          {% endfor %}
+                        }
+                      }
+                    </script>
+                  </div>
+                </div>
+              {% endif %}
+            {% endif %}
+
+            {% if column.categorical_profile %}
+              {% if column.categorical_profile.histograms %}
+                {% set default_histogram = column.categorical_profile.histograms | first %}
+                {% set default_bin = default_histogram.bin_count if default_histogram else None %}
+                <div class="variable-visual">
+                  <div class="variable-visual-header">
+                    <div class="panel-title">Histogram</div>
+                  </div>
+                  <div
+                    class="histogram-chart js-histogram-chart-container"
+                    data-default-bin="{{ default_bin }}"
+                  >
+                    <div class="histogram-canvas">
+                      <canvas class="js-histogram-canvas" aria-label="Histogram chart"></canvas>
+                    </div>
+                    <p class="text-sm text-[var(--color-ink-muted)] hidden js-histogram-empty">
+                      No histogram data.
+                    </p>
+                    <script type="application/json" class="js-histogram-data">
+                      {
+                        "bins": {
+                          {% for histogram in column.categorical_profile.histograms %}
+                            "{{ histogram.bin_count }}": {
+                              "labels": [
+                                {% for label in histogram.labels %}
+                                  {{ label | tojson }}{% if not loop.last %},{% endif %}
+                                {% endfor %}
+                              ],
+                              "counts": [
+                                {% for count in histogram.counts %}
+                                  {{ count }}{% if not loop.last %},{% endif %}
+                                {% endfor %}
+                              ]
+                            }{% if not loop.last %},{% endif %}
+                          {% endfor %}
+                        }
+                      }
+                    </script>
+                  </div>
+                </div>
+              {% endif %}
+            {% endif %}
+
+            {% if column.text_profile %}
+              {% if column.text_profile.length_histograms %}
+                {% set default_histogram = column.text_profile.length_histograms | first %}
+                {% set default_bin = default_histogram.bin_count if default_histogram else None %}
+                <div class="variable-visual">
+                  <div class="variable-visual-header">
+                    <div class="panel-title">Length histogram</div>
+                    {% if column.text_profile.length_histograms | length > 1 %}
+                      <div class="bin-controls" data-bin-controls data-default-bin="{{ default_bin }}">
+                        {% for histogram in column.text_profile.length_histograms %}
+                          <button
+                            class="button button-compact"
+                            type="button"
+                            data-bin="{{ histogram.bin_count }}"
+                          >
+                            {{ histogram.bin_count }}
+                          </button>
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  </div>
+                  <div
+                    class="histogram-chart js-histogram-chart-container"
+                    data-default-bin="{{ default_bin }}"
+                  >
+                    <div class="histogram-canvas">
+                      <canvas class="js-histogram-canvas" aria-label="Histogram chart"></canvas>
+                    </div>
+                    <p class="text-sm text-[var(--color-ink-muted)] hidden js-histogram-empty">
+                      No histogram data.
+                    </p>
+                    <script type="application/json" class="js-histogram-data">
+                      {
+                        "bins": {
+                          {% for histogram in column.text_profile.length_histograms %}
+                            "{{ histogram.bin_count }}": {
+                              "labels": [
+                                {% if histogram.bins %}
+                                  {% for bin in histogram.bins %}
+                                    {% if bin.lower == bin.upper %}
+                                      {{ bin.lower | format_number(true) | tojson }}{% if not loop.last %},{% endif %}
+                                    {% else %}
+                                      {{ ((bin.lower | format_number(true)) ~ " - " ~ (bin.upper | format_number(true))) | tojson }}{% if not loop.last %},{% endif %}
+                                    {% endif %}
+                                  {% endfor %}
+                                {% endif %}
+                              ],
+                              "counts": [
+                                {% if histogram.bins %}
+                                  {% for bin in histogram.bins %}
+                                    {{ bin.count }}{% if not loop.last %},{% endif %}
+                                  {% endfor %}
+                                {% endif %}
+                              ]
+                            }{% if not loop.last %},{% endif %}
+                          {% endfor %}
+                        }
+                      }
+                    </script>
+                  </div>
+                </div>
+              {% endif %}
+            {% endif %}
+
+            {% if column.datetime_profile %}
+              {% if column.datetime_profile.histograms %}
+                {% set default_histogram = column.datetime_profile.histograms | first %}
+                {% set default_bin = default_histogram.bin_count if default_histogram else None %}
+                <div class="variable-visual">
+                  <div class="variable-visual-header">
+                    <div class="panel-title">Histogram</div>
+                  </div>
+                  <div
+                    class="histogram-chart js-histogram-chart-container"
+                    data-default-bin="{{ default_bin }}"
+                  >
+                    <div class="histogram-canvas">
+                      <canvas class="js-histogram-canvas" aria-label="Histogram chart"></canvas>
+                    </div>
+                    <p class="text-sm text-[var(--color-ink-muted)] hidden js-histogram-empty">
+                      No histogram data.
+                    </p>
+                    <script type="application/json" class="js-histogram-data">
+                      {
+                        "bins": {
+                          {% for histogram in column.datetime_profile.histograms %}
+                            "{{ histogram.bin_count }}": {
+                              "labels": [
+                                {% for label in histogram.labels %}
+                                  {{ label | tojson }}{% if not loop.last %},{% endif %}
+                                {% endfor %}
+                              ],
+                              "counts": [
+                                {% for count in histogram.counts %}
+                                  {{ count }}{% if not loop.last %},{% endif %}
+                                {% endfor %}
+                              ]
+                            }{% if not loop.last %},{% endif %}
+                          {% endfor %}
+                        }
+                      }
+                    </script>
+                  </div>
+                </div>
+              {% endif %}
+            {% endif %}
+
+            {% if column.numeric_profile %}
+              <div class="variable-lower value-table-grid-compact">
+                <div class="value-table">
+                  <div class="panel-title">Most frequent values</div>
+                  <table class="table-base text-sm">
+                    <tbody class="divide-y divide-slate-100">
+                      {% for value in column.numeric_profile.top_values %}
+                        <tr><td>{{ value.value | format_number(is_integer) }}</td><td>{{ value.count }}</td></tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+                <div class="value-table">
+                  <div class="panel-title">Smallest values</div>
+                  <table class="table-base text-sm">
+                    <tbody class="divide-y divide-slate-100">
+                      {% for value in column.numeric_profile.min_values %}
+                        <tr><td>{{ value.value | format_number(is_integer) }}</td><td>{{ value.count }}</td></tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+                <div class="value-table">
+                  <div class="panel-title">Largest values</div>
+                  <table class="table-base text-sm">
+                    <tbody class="divide-y divide-slate-100">
+                      {% for value in column.numeric_profile.max_values %}
+                        <tr><td>{{ value.value | format_number(is_integer) }}</td><td>{{ value.count }}</td></tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            {% endif %}
+
+            {% if column.categorical_profile %}
+              <div class="variable-lower value-table-grid">
+                <div class="value-table">
+                  <div class="panel-title">Top categories</div>
+                  <table class="table-base text-sm">
+                    <tbody class="divide-y divide-slate-100">
+                      {% for category in column.categorical_profile.top_categories %}
+                        <tr><td>{{ category.category }}</td><td>{{ category.count }}</td></tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                  {% if column.categorical_profile.is_high_cardinality %}
+                    <p class="mt-2 text-xs text-rose-200">High cardinality detected.</p>
+                  {% endif %}
+                </div>
+              </div>
+            {% endif %}
+
+            {% if column.datetime_profile %}
+              <div class="variable-lower value-table-grid">
+                <div class="value-table">
+                  <div class="panel-title">Datetime range</div>
+                  <div class="summary-rows text-sm">
+                    <div class="summary-row"><span>Min</span><span>{{ column.datetime_profile.min_datetime }}</span></div>
+                    <div class="summary-row"><span>Max</span><span>{{ column.datetime_profile.max_datetime }}</span></div>
+                  </div>
+                </div>
+                <div class="value-table">
+                  <div class="panel-title">Most frequent values</div>
+                  <table class="table-base text-sm">
+                    <tbody class="divide-y divide-slate-100">
+                      {% for value in column.datetime_profile.top_values %}
+                        <tr><td>{{ value.value }}</td><td>{{ value.count }}</td></tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            {% endif %}
+
+            {% if column.text_profile %}
+              <div class="variable-lower value-table-grid">
+                <div class="value-table">
+                  <div class="panel-title">Most frequent values</div>
+                  <table class="table-base text-sm">
+                    <tbody class="divide-y divide-slate-100">
+                      {% for token in column.text_profile.top_tokens %}
+                        <tr>
+                          <td>
+                            <div>{{ token.token }}</div>
+                            <div class="text-xs text-[var(--color-ink-muted)]">Count: {{ token.count }}</div>
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+                <div class="value-table">
+                  <div class="panel-title">Text length stats</div>
+                  <div class="summary-rows text-sm">
+                    <div class="summary-row"><span>Mean</span><span>{{ column.text_profile.length_stats.mean | format_number(true) }}</span></div>
+                    <div class="summary-row"><span>Median</span><span>{{ column.text_profile.length_stats.median | format_number(true) }}</span></div>
+                    <div class="summary-row"><span>Min</span><span>{{ column.text_profile.length_stats.minimum | format_number(true) }}</span></div>
+                    <div class="summary-row"><span>Max</span><span>{{ column.text_profile.length_stats.maximum | format_number(true) }}</span></div>
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="space-y-8">
+      {% if payload.compare_column_profiles %}
+        <div class="space-y-6">
+          {% for column in payload.compare_column_profiles %}
+            <article class="variable-card panel panel-notch" data-column-name="{{ column.column_name }}">
+              <div class="variable-header">
+                <div class="min-w-0">
+                  <h3 class="variable-name">{{ column.column_name }}</h3>
+                  <p class="variable-type">Compare column</p>
+                </div>
+                {% if column.left_profile.data_type == column.right_profile.data_type %}
+                  <div class="tag">{{ column.left_profile.data_type }}</div>
+                {% else %}
+                  <div class="flex flex-wrap gap-2">
+                    <div class="tag">{{ payload.comparison_summary.left_dataset.dataset_id }}: {{ column.left_profile.data_type }}</div>
+                    <div class="tag">{{ payload.comparison_summary.right_dataset.dataset_id }}: {{ column.right_profile.data_type }}</div>
+                  </div>
+                {% endif %}
+              </div>
+
+              <div class="variable-body">
+                <div class="grid gap-4 md:grid-cols-2">
+                  <div class="space-y-4">
+                    <div class="panel-title">{{ payload.comparison_summary.left_dataset.dataset_id }}</div>
+                    <div class="variable-meta">
+                      <div class="meta-row"><span>Values</span><span>{{ column.left_profile.non_null_count }}</span></div>
+                      <div class="meta-row"><span>Missing</span><span>{{ column.left_profile.null_count }} ({{ column.left_profile.null_rate }})</span></div>
+                      <div class="meta-row"><span>Distinct</span><span>{{ column.left_profile.unique_count }}</span></div>
+                      <div class="meta-row"><span>Zeroes</span><span>{{ column.left_profile.zero_count }}</span></div>
+                    </div>
+
+                    {% if column.left_profile.numeric_profile %}
+                      {% set left_integer = column.left_profile.numeric_profile.is_integer %}
+                      <div class="variable-stats-grid">
+                        <div class="stats-block">
+                          <div class="panel-title">Stats</div>
+                          <table class="table-base text-sm">
+                            <tbody class="divide-y divide-slate-100">
+                              <tr><td>Min</td><td>{{ column.left_profile.numeric_profile.stats.minimum | format_number(left_integer) }}</td></tr>
+                              <tr><td>Max</td><td>{{ column.left_profile.numeric_profile.stats.maximum | format_number(left_integer) }}</td></tr>
+                              <tr><td>Mean</td><td>{{ column.left_profile.numeric_profile.stats.mean | format_number(left_integer) }}</td></tr>
+                              <tr><td>Median</td><td>{{ column.left_profile.numeric_profile.stats.median | format_number(left_integer) }}</td></tr>
+                              <tr><td>Std</td><td>{{ column.left_profile.numeric_profile.stats.std | format_number(left_integer) }}</td></tr>
+                              <tr><td>Variance</td><td>{{ column.left_profile.numeric_profile.stats.variance | format_number(left_integer) }}</td></tr>
+                              <tr><td>IQR</td><td>{{ column.left_profile.numeric_profile.stats.iqr | format_number(left_integer) }}</td></tr>
+                              <tr><td>Outlier rate</td><td>{{ column.left_profile.numeric_profile.outlier_rate | format_number(left_integer) }}</td></tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <div class="stats-block">
+                          <div class="panel-title">Quantiles</div>
+                          <table class="table-base text-sm">
+                            <tbody class="divide-y divide-slate-100">
+                              {% for quantile in column.left_profile.numeric_profile.stats.quantiles %}
+                                <tr><td>{{ quantile.quantile }}</td><td>{{ quantile.value | format_number(left_integer) }}</td></tr>
+                              {% endfor %}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    {% endif %}
+
+                    {% if column.left_profile.categorical_profile %}
+                      <div class="value-table">
+                        <div class="panel-title">Top categories</div>
+                        <table class="table-base text-sm">
+                          <tbody class="divide-y divide-slate-100">
+                            {% for category in column.left_profile.categorical_profile.top_categories %}
+                              <tr><td>{{ category.category }}</td><td>{{ category.count }}</td></tr>
+                            {% endfor %}
+                          </tbody>
+                        </table>
+                        {% if column.left_profile.categorical_profile.is_high_cardinality %}
+                          <p class="mt-2 text-xs text-rose-200">High cardinality detected.</p>
+                        {% endif %}
+                      </div>
+                    {% endif %}
+
+                    {% if column.left_profile.datetime_profile %}
+                      <div class="value-table">
+                        <div class="panel-title">Datetime range</div>
+                        <div class="summary-rows text-sm">
+                          <div class="summary-row"><span>Min</span><span>{{ column.left_profile.datetime_profile.min_datetime }}</span></div>
+                          <div class="summary-row"><span>Max</span><span>{{ column.left_profile.datetime_profile.max_datetime }}</span></div>
+                        </div>
+                      </div>
+                      <div class="value-table">
+                        <div class="panel-title">Most frequent values</div>
+                        <table class="table-base text-sm">
+                          <tbody class="divide-y divide-slate-100">
+                            {% for value in column.left_profile.datetime_profile.top_values %}
+                              <tr><td>{{ value.value }}</td><td>{{ value.count }}</td></tr>
+                            {% endfor %}
+                          </tbody>
+                        </table>
+                      </div>
+                    {% endif %}
+
+                    {% if column.left_profile.text_profile %}
+                      <div class="value-table">
+                        <div class="panel-title">Most frequent values</div>
+                        <table class="table-base text-sm">
+                          <tbody class="divide-y divide-slate-100">
+                            {% for token in column.left_profile.text_profile.top_tokens %}
+                              <tr>
+                                <td>
+                                  <div>{{ token.token }}</div>
+                                  <div class="text-xs text-[var(--color-ink-muted)]">Count: {{ token.count }}</div>
+                                </td>
+                              </tr>
+                            {% endfor %}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div class="value-table">
+                        <div class="panel-title">Text length stats</div>
+                        <div class="summary-rows text-sm">
+                          <div class="summary-row"><span>Mean</span><span>{{ column.left_profile.text_profile.length_stats.mean | format_number(true) }}</span></div>
+                          <div class="summary-row"><span>Median</span><span>{{ column.left_profile.text_profile.length_stats.median | format_number(true) }}</span></div>
+                          <div class="summary-row"><span>Min</span><span>{{ column.left_profile.text_profile.length_stats.minimum | format_number(true) }}</span></div>
+                          <div class="summary-row"><span>Max</span><span>{{ column.left_profile.text_profile.length_stats.maximum | format_number(true) }}</span></div>
+                        </div>
+                      </div>
+                    {% endif %}
+
+                    {% if column.left_profile.numeric_profile %}
+                      <div class="value-table-grid-compact">
+                        <div class="value-table">
+                          <div class="panel-title">Most frequent values</div>
+                          <table class="table-base text-sm">
+                            <tbody class="divide-y divide-slate-100">
+                              {% for value in column.left_profile.numeric_profile.top_values %}
+                                <tr><td>{{ value.value | format_number(left_integer) }}</td><td>{{ value.count }}</td></tr>
+                              {% endfor %}
+                            </tbody>
+                          </table>
+                        </div>
+                        <div class="value-table">
+                          <div class="panel-title">Smallest values</div>
+                          <table class="table-base text-sm">
+                            <tbody class="divide-y divide-slate-100">
+                              {% for value in column.left_profile.numeric_profile.min_values %}
+                                <tr><td>{{ value.value | format_number(left_integer) }}</td><td>{{ value.count }}</td></tr>
+                              {% endfor %}
+                            </tbody>
+                          </table>
+                        </div>
+                        <div class="value-table">
+                          <div class="panel-title">Largest values</div>
+                          <table class="table-base text-sm">
+                            <tbody class="divide-y divide-slate-100">
+                              {% for value in column.left_profile.numeric_profile.max_values %}
+                                <tr><td>{{ value.value | format_number(left_integer) }}</td><td>{{ value.count }}</td></tr>
+                              {% endfor %}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    {% endif %}
+                  </div>
+
+                  <div class="space-y-4">
+                    <div class="panel-title">{{ payload.comparison_summary.right_dataset.dataset_id }}</div>
+                    <div class="variable-meta">
+                      <div class="meta-row"><span>Values</span><span>{{ column.right_profile.non_null_count }}</span></div>
+                      <div class="meta-row"><span>Missing</span><span>{{ column.right_profile.null_count }} ({{ column.right_profile.null_rate }})</span></div>
+                      <div class="meta-row"><span>Distinct</span><span>{{ column.right_profile.unique_count }}</span></div>
+                      <div class="meta-row"><span>Zeroes</span><span>{{ column.right_profile.zero_count }}</span></div>
+                    </div>
+
+                    {% if column.right_profile.numeric_profile %}
+                      {% set right_integer = column.right_profile.numeric_profile.is_integer %}
+                      <div class="variable-stats-grid">
+                        <div class="stats-block">
+                          <div class="panel-title">Stats</div>
+                          <table class="table-base text-sm">
+                            <tbody class="divide-y divide-slate-100">
+                              <tr><td>Min</td><td>{{ column.right_profile.numeric_profile.stats.minimum | format_number(right_integer) }}</td></tr>
+                              <tr><td>Max</td><td>{{ column.right_profile.numeric_profile.stats.maximum | format_number(right_integer) }}</td></tr>
+                              <tr><td>Mean</td><td>{{ column.right_profile.numeric_profile.stats.mean | format_number(right_integer) }}</td></tr>
+                              <tr><td>Median</td><td>{{ column.right_profile.numeric_profile.stats.median | format_number(right_integer) }}</td></tr>
+                              <tr><td>Std</td><td>{{ column.right_profile.numeric_profile.stats.std | format_number(right_integer) }}</td></tr>
+                              <tr><td>Variance</td><td>{{ column.right_profile.numeric_profile.stats.variance | format_number(right_integer) }}</td></tr>
+                              <tr><td>IQR</td><td>{{ column.right_profile.numeric_profile.stats.iqr | format_number(right_integer) }}</td></tr>
+                              <tr><td>Outlier rate</td><td>{{ column.right_profile.numeric_profile.outlier_rate | format_number(right_integer) }}</td></tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <div class="stats-block">
+                          <div class="panel-title">Quantiles</div>
+                          <table class="table-base text-sm">
+                            <tbody class="divide-y divide-slate-100">
+                              {% for quantile in column.right_profile.numeric_profile.stats.quantiles %}
+                                <tr><td>{{ quantile.quantile }}</td><td>{{ quantile.value | format_number(right_integer) }}</td></tr>
+                              {% endfor %}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    {% endif %}
+
+                    {% if column.right_profile.categorical_profile %}
+                      <div class="value-table">
+                        <div class="panel-title">Top categories</div>
+                        <table class="table-base text-sm">
+                          <tbody class="divide-y divide-slate-100">
+                            {% for category in column.right_profile.categorical_profile.top_categories %}
+                              <tr><td>{{ category.category }}</td><td>{{ category.count }}</td></tr>
+                            {% endfor %}
+                          </tbody>
+                        </table>
+                        {% if column.right_profile.categorical_profile.is_high_cardinality %}
+                          <p class="mt-2 text-xs text-rose-200">High cardinality detected.</p>
+                        {% endif %}
+                      </div>
+                    {% endif %}
+
+                    {% if column.right_profile.datetime_profile %}
+                      <div class="value-table">
+                        <div class="panel-title">Datetime range</div>
+                        <div class="summary-rows text-sm">
+                          <div class="summary-row"><span>Min</span><span>{{ column.right_profile.datetime_profile.min_datetime }}</span></div>
+                          <div class="summary-row"><span>Max</span><span>{{ column.right_profile.datetime_profile.max_datetime }}</span></div>
+                        </div>
+                      </div>
+                      <div class="value-table">
+                        <div class="panel-title">Most frequent values</div>
+                        <table class="table-base text-sm">
+                          <tbody class="divide-y divide-slate-100">
+                            {% for value in column.right_profile.datetime_profile.top_values %}
+                              <tr><td>{{ value.value }}</td><td>{{ value.count }}</td></tr>
+                            {% endfor %}
+                          </tbody>
+                        </table>
+                      </div>
+                    {% endif %}
+
+                    {% if column.right_profile.text_profile %}
+                      <div class="value-table">
+                        <div class="panel-title">Most frequent values</div>
+                        <table class="table-base text-sm">
+                          <tbody class="divide-y divide-slate-100">
+                            {% for token in column.right_profile.text_profile.top_tokens %}
+                              <tr>
+                                <td>
+                                  <div>{{ token.token }}</div>
+                                  <div class="text-xs text-[var(--color-ink-muted)]">Count: {{ token.count }}</div>
+                                </td>
+                              </tr>
+                            {% endfor %}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div class="value-table">
+                        <div class="panel-title">Text length stats</div>
+                        <div class="summary-rows text-sm">
+                          <div class="summary-row"><span>Mean</span><span>{{ column.right_profile.text_profile.length_stats.mean | format_number(true) }}</span></div>
+                          <div class="summary-row"><span>Median</span><span>{{ column.right_profile.text_profile.length_stats.median | format_number(true) }}</span></div>
+                          <div class="summary-row"><span>Min</span><span>{{ column.right_profile.text_profile.length_stats.minimum | format_number(true) }}</span></div>
+                          <div class="summary-row"><span>Max</span><span>{{ column.right_profile.text_profile.length_stats.maximum | format_number(true) }}</span></div>
+                        </div>
+                      </div>
+                    {% endif %}
+
+                    {% if column.right_profile.numeric_profile %}
+                      <div class="value-table-grid-compact">
+                        <div class="value-table">
+                          <div class="panel-title">Most frequent values</div>
+                          <table class="table-base text-sm">
+                            <tbody class="divide-y divide-slate-100">
+                              {% for value in column.right_profile.numeric_profile.top_values %}
+                                <tr><td>{{ value.value | format_number(right_integer) }}</td><td>{{ value.count }}</td></tr>
+                              {% endfor %}
+                            </tbody>
+                          </table>
+                        </div>
+                        <div class="value-table">
+                          <div class="panel-title">Smallest values</div>
+                          <table class="table-base text-sm">
+                            <tbody class="divide-y divide-slate-100">
+                              {% for value in column.right_profile.numeric_profile.min_values %}
+                                <tr><td>{{ value.value | format_number(right_integer) }}</td><td>{{ value.count }}</td></tr>
+                              {% endfor %}
+                            </tbody>
+                          </table>
+                        </div>
+                        <div class="value-table">
+                          <div class="panel-title">Largest values</div>
+                          <table class="table-base text-sm">
+                            <tbody class="divide-y divide-slate-100">
+                              {% for value in column.right_profile.numeric_profile.max_values %}
+                                <tr><td>{{ value.value | format_number(right_integer) }}</td><td>{{ value.count }}</td></tr>
+                              {% endfor %}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    {% endif %}
+                  </div>
+                </div>
+
+                {% if column.histograms %}
+                  {% set default_histogram = column.histograms | first %}
+                  {% set default_bin = default_histogram.bin_count if default_histogram else None %}
+                  <div class="variable-visual">
+                    <div class="variable-visual-header">
+                      <div class="panel-title">Histogram</div>
+                      {% if column.histograms | length > 1 %}
+                        <div class="bin-controls" data-bin-controls data-default-bin="{{ default_bin }}">
+                          {% for histogram in column.histograms %}
+                            <button
+                              class="button button-compact"
+                              type="button"
+                              data-bin="{{ histogram.bin_count }}"
+                            >
+                              {{ histogram.bin_count }}
+                            </button>
+                          {% endfor %}
+                        </div>
+                      {% endif %}
+                    </div>
+                    <div
+                      class="histogram-chart js-histogram-chart-container"
+                      data-default-bin="{{ default_bin }}"
+                      data-left-label="{{ payload.comparison_summary.left_dataset.dataset_id }}"
+                      data-right-label="{{ payload.comparison_summary.right_dataset.dataset_id }}"
+                    >
+                      <div class="histogram-canvas">
+                        <canvas class="js-histogram-canvas" aria-label="Histogram chart"></canvas>
+                      </div>
+                      <p class="text-sm text-[var(--color-ink-muted)] hidden js-histogram-empty">
+                        No histogram data.
+                      </p>
+                      <script type="application/json" class="js-histogram-data">
+                        {
+                          "bins": {
+                            {% for histogram in column.histograms %}
+                              "{{ histogram.bin_count }}": {
+                                "labels": [
+                                  {% for label in histogram.labels %}
+                                    {{ label | tojson }}{% if not loop.last %},{% endif %}
+                                  {% endfor %}
+                                ],
+                                "left_counts": [
+                                  {% for count in histogram.left_counts %}
+                                    {{ count }}{% if not loop.last %},{% endif %}
+                                  {% endfor %}
+                                ],
+                                "right_counts": [
+                                  {% for count in histogram.right_counts %}
+                                    {{ count }}{% if not loop.last %},{% endif %}
+                                  {% endfor %}
+                                ]
+                              }{% if not loop.last %},{% endif %}
+                            {% endfor %}
+                          }
+                        }
+                      </script>
+                    </div>
+                  </div>
+                {% endif %}
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="panel text-sm text-[var(--color-ink)]">
+          No common columns to compare.
+        </div>
+      {% endif %}
+
+      {% if payload.comparison_summary.column_profiles_left_only %}
+        <div class="section-head">
+          <h3 class="text-lg font-semibold text-white">{{ payload.comparison_summary.left_dataset.dataset_id }}-only columns</h3>
+          <span class="text-xs uppercase tracking-wide text-[var(--color-ink-muted)]">Single side</span>
+        </div>
+        <div class="space-y-6">
+          {% for column in payload.comparison_summary.column_profiles_left_only %}
+            <article class="variable-card panel panel-notch" data-column-name="{{ column.column_name }}">
+              <div class="variable-header">
+                <div class="min-w-0">
+                  <h3 class="variable-name">{{ column.column_name }}</h3>
+                  <p class="variable-type">{{ payload.comparison_summary.left_dataset.dataset_id }} only</p>
+                </div>
+                <div class="tag">{{ column.data_type }}</div>
+              </div>
+              <div class="variable-body">
+                {% set is_integer = column.numeric_profile.is_integer if column.numeric_profile else false %}
+                <div class="variable-upper">
+                  <div class="variable-details">
+                    <div class="variable-meta">
+                      <div class="meta-row"><span>Values</span><span>{{ column.non_null_count }}</span></div>
+                      <div class="meta-row"><span>Missing</span><span>{{ column.null_count }} ({{ column.null_rate }})</span></div>
+                      <div class="meta-row"><span>Distinct</span><span>{{ column.unique_count }}</span></div>
+                      <div class="meta-row"><span>Zeroes</span><span>{{ column.zero_count }}</span></div>
+                    </div>
+
+                    {% if column.numeric_profile %}
+                      <div class="variable-stats-grid">
+                        <div class="stats-block">
+                          <div class="panel-title">Stats</div>
+                          <table class="table-base text-sm">
+                            <tbody class="divide-y divide-slate-100">
+                              <tr><td>Min</td><td>{{ column.numeric_profile.stats.minimum | format_number(is_integer) }}</td></tr>
+                              <tr><td>Max</td><td>{{ column.numeric_profile.stats.maximum | format_number(is_integer) }}</td></tr>
+                              <tr><td>Mean</td><td>{{ column.numeric_profile.stats.mean | format_number(is_integer) }}</td></tr>
+                              <tr><td>Median</td><td>{{ column.numeric_profile.stats.median | format_number(is_integer) }}</td></tr>
+                              <tr><td>Std</td><td>{{ column.numeric_profile.stats.std | format_number(is_integer) }}</td></tr>
+                              <tr><td>Variance</td><td>{{ column.numeric_profile.stats.variance | format_number(is_integer) }}</td></tr>
+                              <tr><td>IQR</td><td>{{ column.numeric_profile.stats.iqr | format_number(is_integer) }}</td></tr>
+                              <tr><td>Outlier rate</td><td>{{ column.numeric_profile.outlier_rate | format_number(is_integer) }}</td></tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <div class="stats-block">
+                          <div class="panel-title">Quantiles</div>
+                          <table class="table-base text-sm">
+                            <tbody class="divide-y divide-slate-100">
+                              {% for quantile in column.numeric_profile.stats.quantiles %}
+                                <tr><td>{{ quantile.quantile }}</td><td>{{ quantile.value | format_number(is_integer) }}</td></tr>
+                              {% endfor %}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    {% endif %}
+                  </div>
+                </div>
+
+                {% if column.numeric_profile %}
+                  {% if column.numeric_profile.histograms %}
+                    {% set default_histogram = column.numeric_profile.histograms | first %}
+                    {% set default_bin = default_histogram.bin_count if default_histogram else None %}
+                    <div class="variable-visual">
+                      <div class="variable-visual-header">
+                        <div class="panel-title">Histogram</div>
+                        {% if column.numeric_profile.histograms | length > 1 %}
+                          <div class="bin-controls" data-bin-controls data-default-bin="{{ default_bin }}">
+                            {% for histogram in column.numeric_profile.histograms %}
+                              <button
+                                class="button button-compact"
+                                type="button"
+                                data-bin="{{ histogram.bin_count }}"
+                              >
+                                {{ histogram.bin_count }}
+                              </button>
+                            {% endfor %}
+                          </div>
+                        {% endif %}
+                      </div>
+                      <div
+                        class="histogram-chart js-histogram-chart-container"
+                        data-default-bin="{{ default_bin }}"
+                      >
+                        <div class="histogram-canvas">
+                          <canvas class="js-histogram-canvas" aria-label="Histogram chart"></canvas>
+                        </div>
+                        <p class="text-sm text-[var(--color-ink-muted)] hidden js-histogram-empty">
+                          No histogram data.
+                        </p>
+                        <script type="application/json" class="js-histogram-data">
+                          {
+                            "bins": {
+                              {% for histogram in column.numeric_profile.histograms %}
+                                "{{ histogram.bin_count }}": {
+                                  "labels": [
+                                    {% if histogram.bins %}
+                                      {% for bin in histogram.bins %}
+                                        {% if bin.lower == bin.upper %}
+                                          {{ bin.lower | format_number(is_integer) | tojson }}{% if not loop.last %},{% endif %}
+                                        {% else %}
+                                          {{ ((bin.lower | format_number(is_integer)) ~ " - " ~ (bin.upper | format_number(is_integer))) | tojson }}{% if not loop.last %},{% endif %}
+                                        {% endif %}
+                                      {% endfor %}
+                                    {% endif %}
+                                  ],
+                                  "counts": [
+                                    {% if histogram.bins %}
+                                      {% for bin in histogram.bins %}
+                                        {{ bin.count }}{% if not loop.last %},{% endif %}
+                                      {% endfor %}
+                                    {% endif %}
+                                  ]
+                                }{% if not loop.last %},{% endif %}
+                              {% endfor %}
+                            }
+                          }
+                        </script>
+                      </div>
+                    </div>
+                  {% endif %}
+                {% endif %}
+
+                {% if column.categorical_profile %}
+                  {% if column.categorical_profile.histograms %}
+                    {% set default_histogram = column.categorical_profile.histograms | first %}
+                    {% set default_bin = default_histogram.bin_count if default_histogram else None %}
+                    <div class="variable-visual">
+                      <div class="variable-visual-header">
+                        <div class="panel-title">Histogram</div>
+                      </div>
+                      <div
+                        class="histogram-chart js-histogram-chart-container"
+                        data-default-bin="{{ default_bin }}"
+                      >
+                        <div class="histogram-canvas">
+                          <canvas class="js-histogram-canvas" aria-label="Histogram chart"></canvas>
+                        </div>
+                        <p class="text-sm text-[var(--color-ink-muted)] hidden js-histogram-empty">
+                          No histogram data.
+                        </p>
+                        <script type="application/json" class="js-histogram-data">
+                          {
+                            "bins": {
+                              {% for histogram in column.categorical_profile.histograms %}
+                                "{{ histogram.bin_count }}": {
+                                  "labels": [
+                                    {% for label in histogram.labels %}
+                                      {{ label | tojson }}{% if not loop.last %},{% endif %}
+                                    {% endfor %}
+                                  ],
+                                  "counts": [
+                                    {% for count in histogram.counts %}
+                                      {{ count }}{% if not loop.last %},{% endif %}
+                                    {% endfor %}
+                                  ]
+                                }{% if not loop.last %},{% endif %}
+                              {% endfor %}
+                            }
+                          }
+                        </script>
+                      </div>
+                    </div>
+                  {% endif %}
+                {% endif %}
+
+                {% if column.text_profile %}
+                  {% if column.text_profile.length_histograms %}
+                    {% set default_histogram = column.text_profile.length_histograms | first %}
+                    {% set default_bin = default_histogram.bin_count if default_histogram else None %}
+                    <div class="variable-visual">
+                      <div class="variable-visual-header">
+                        <div class="panel-title">Length histogram</div>
+                        {% if column.text_profile.length_histograms | length > 1 %}
+                          <div class="bin-controls" data-bin-controls data-default-bin="{{ default_bin }}">
+                            {% for histogram in column.text_profile.length_histograms %}
+                              <button
+                                class="button button-compact"
+                                type="button"
+                                data-bin="{{ histogram.bin_count }}"
+                              >
+                                {{ histogram.bin_count }}
+                              </button>
+                            {% endfor %}
+                          </div>
+                        {% endif %}
+                      </div>
+                      <div
+                        class="histogram-chart js-histogram-chart-container"
+                        data-default-bin="{{ default_bin }}"
+                      >
+                        <div class="histogram-canvas">
+                          <canvas class="js-histogram-canvas" aria-label="Histogram chart"></canvas>
+                        </div>
+                        <p class="text-sm text-[var(--color-ink-muted)] hidden js-histogram-empty">
+                          No histogram data.
+                        </p>
+                        <script type="application/json" class="js-histogram-data">
+                          {
+                            "bins": {
+                              {% for histogram in column.text_profile.length_histograms %}
+                                "{{ histogram.bin_count }}": {
+                                  "labels": [
+                                    {% if histogram.bins %}
+                                      {% for bin in histogram.bins %}
+                                        {% if bin.lower == bin.upper %}
+                                          {{ bin.lower | format_number(true) | tojson }}{% if not loop.last %},{% endif %}
+                                        {% else %}
+                                          {{ ((bin.lower | format_number(true)) ~ " - " ~ (bin.upper | format_number(true))) | tojson }}{% if not loop.last %},{% endif %}
+                                        {% endif %}
+                                      {% endfor %}
+                                    {% endif %}
+                                  ],
+                                  "counts": [
+                                    {% if histogram.bins %}
+                                      {% for bin in histogram.bins %}
+                                        {{ bin.count }}{% if not loop.last %},{% endif %}
+                                      {% endfor %}
+                                    {% endif %}
+                                  ]
+                                }{% if not loop.last %},{% endif %}
+                              {% endfor %}
+                            }
+                          }
+                        </script>
+                      </div>
+                    </div>
+                  {% endif %}
+                {% endif %}
+
+                {% if column.datetime_profile %}
+                  {% if column.datetime_profile.histograms %}
+                    {% set default_histogram = column.datetime_profile.histograms | first %}
+                    {% set default_bin = default_histogram.bin_count if default_histogram else None %}
+                    <div class="variable-visual">
+                      <div class="variable-visual-header">
+                        <div class="panel-title">Histogram</div>
+                      </div>
+                      <div
+                        class="histogram-chart js-histogram-chart-container"
+                        data-default-bin="{{ default_bin }}"
+                      >
+                        <div class="histogram-canvas">
+                          <canvas class="js-histogram-canvas" aria-label="Histogram chart"></canvas>
+                        </div>
+                        <p class="text-sm text-[var(--color-ink-muted)] hidden js-histogram-empty">
+                          No histogram data.
+                        </p>
+                        <script type="application/json" class="js-histogram-data">
+                          {
+                            "bins": {
+                              {% for histogram in column.datetime_profile.histograms %}
+                                "{{ histogram.bin_count }}": {
+                                  "labels": [
+                                    {% for label in histogram.labels %}
+                                      {{ label | tojson }}{% if not loop.last %},{% endif %}
+                                    {% endfor %}
+                                  ],
+                                  "counts": [
+                                    {% for count in histogram.counts %}
+                                      {{ count }}{% if not loop.last %},{% endif %}
+                                    {% endfor %}
+                                  ]
+                                }{% if not loop.last %},{% endif %}
+                              {% endfor %}
+                            }
+                          }
+                        </script>
+                      </div>
+                    </div>
+                  {% endif %}
+                {% endif %}
+
+                {% if column.numeric_profile %}
+                  <div class="variable-lower value-table-grid-compact">
+                    <div class="value-table">
+                      <div class="panel-title">Most frequent values</div>
+                      <table class="table-base text-sm">
+                        <tbody class="divide-y divide-slate-100">
+                          {% for value in column.numeric_profile.top_values %}
+                            <tr><td>{{ value.value | format_number(is_integer) }}</td><td>{{ value.count }}</td></tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="value-table">
+                      <div class="panel-title">Smallest values</div>
+                      <table class="table-base text-sm">
+                        <tbody class="divide-y divide-slate-100">
+                          {% for value in column.numeric_profile.min_values %}
+                            <tr><td>{{ value.value | format_number(is_integer) }}</td><td>{{ value.count }}</td></tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="value-table">
+                      <div class="panel-title">Largest values</div>
+                      <table class="table-base text-sm">
+                        <tbody class="divide-y divide-slate-100">
+                          {% for value in column.numeric_profile.max_values %}
+                            <tr><td>{{ value.value | format_number(is_integer) }}</td><td>{{ value.count }}</td></tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                {% endif %}
+
+                {% if column.categorical_profile %}
+                  <div class="variable-lower value-table-grid">
+                    <div class="value-table">
+                      <div class="panel-title">Top categories</div>
+                      <table class="table-base text-sm">
+                        <tbody class="divide-y divide-slate-100">
+                          {% for category in column.categorical_profile.top_categories %}
+                            <tr><td>{{ category.category }}</td><td>{{ category.count }}</td></tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                      {% if column.categorical_profile.is_high_cardinality %}
+                        <p class="mt-2 text-xs text-rose-200">High cardinality detected.</p>
+                      {% endif %}
+                    </div>
+                  </div>
+                {% endif %}
+
+                {% if column.datetime_profile %}
+                  <div class="variable-lower value-table-grid">
+                    <div class="value-table">
+                      <div class="panel-title">Datetime range</div>
+                      <div class="summary-rows text-sm">
+                        <div class="summary-row"><span>Min</span><span>{{ column.datetime_profile.min_datetime }}</span></div>
+                        <div class="summary-row"><span>Max</span><span>{{ column.datetime_profile.max_datetime }}</span></div>
+                      </div>
+                    </div>
+                    <div class="value-table">
+                      <div class="panel-title">Most frequent values</div>
+                      <table class="table-base text-sm">
+                        <tbody class="divide-y divide-slate-100">
+                          {% for value in column.datetime_profile.top_values %}
+                            <tr><td>{{ value.value }}</td><td>{{ value.count }}</td></tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                {% endif %}
+
+                {% if column.text_profile %}
+                  <div class="variable-lower value-table-grid">
+                    <div class="value-table">
+                      <div class="panel-title">Most frequent values</div>
+                      <table class="table-base text-sm">
+                        <tbody class="divide-y divide-slate-100">
+                          {% for token in column.text_profile.top_tokens %}
+                            <tr>
+                              <td>
+                                <div>{{ token.token }}</div>
+                                <div class="text-xs text-[var(--color-ink-muted)]">Count: {{ token.count }}</div>
+                              </td>
+                            </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="value-table">
+                      <div class="panel-title">Text length stats</div>
+                      <div class="summary-rows text-sm">
+                        <div class="summary-row"><span>Mean</span><span>{{ column.text_profile.length_stats.mean | format_number(true) }}</span></div>
+                        <div class="summary-row"><span>Median</span><span>{{ column.text_profile.length_stats.median | format_number(true) }}</span></div>
+                        <div class="summary-row"><span>Min</span><span>{{ column.text_profile.length_stats.minimum | format_number(true) }}</span></div>
+                        <div class="summary-row"><span>Max</span><span>{{ column.text_profile.length_stats.maximum | format_number(true) }}</span></div>
+                      </div>
+                    </div>
+                  </div>
+                {% endif %}
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% if payload.comparison_summary.column_profiles_right_only %}
+        <div class="section-head">
+          <h3 class="text-lg font-semibold text-white">{{ payload.comparison_summary.right_dataset.dataset_id }}-only columns</h3>
+          <span class="text-xs uppercase tracking-wide text-[var(--color-ink-muted)]">Single side</span>
+        </div>
+        <div class="space-y-6">
+          {% for column in payload.comparison_summary.column_profiles_right_only %}
+            <article class="variable-card panel panel-notch" data-column-name="{{ column.column_name }}">
+              <div class="variable-header">
+                <div class="min-w-0">
+                  <h3 class="variable-name">{{ column.column_name }}</h3>
+                  <p class="variable-type">{{ payload.comparison_summary.right_dataset.dataset_id }} only</p>
+                </div>
+                <div class="tag">{{ column.data_type }}</div>
+              </div>
+              <div class="variable-body">
+                {% set is_integer = column.numeric_profile.is_integer if column.numeric_profile else false %}
+                <div class="variable-upper">
+                  <div class="variable-details">
+                    <div class="variable-meta">
+                      <div class="meta-row"><span>Values</span><span>{{ column.non_null_count }}</span></div>
+                      <div class="meta-row"><span>Missing</span><span>{{ column.null_count }} ({{ column.null_rate }})</span></div>
+                      <div class="meta-row"><span>Distinct</span><span>{{ column.unique_count }}</span></div>
+                      <div class="meta-row"><span>Zeroes</span><span>{{ column.zero_count }}</span></div>
+                    </div>
+
+                    {% if column.numeric_profile %}
+                      <div class="variable-stats-grid">
+                        <div class="stats-block">
+                          <div class="panel-title">Stats</div>
+                          <table class="table-base text-sm">
+                            <tbody class="divide-y divide-slate-100">
+                              <tr><td>Min</td><td>{{ column.numeric_profile.stats.minimum | format_number(is_integer) }}</td></tr>
+                              <tr><td>Max</td><td>{{ column.numeric_profile.stats.maximum | format_number(is_integer) }}</td></tr>
+                              <tr><td>Mean</td><td>{{ column.numeric_profile.stats.mean | format_number(is_integer) }}</td></tr>
+                              <tr><td>Median</td><td>{{ column.numeric_profile.stats.median | format_number(is_integer) }}</td></tr>
+                              <tr><td>Std</td><td>{{ column.numeric_profile.stats.std | format_number(is_integer) }}</td></tr>
+                              <tr><td>Variance</td><td>{{ column.numeric_profile.stats.variance | format_number(is_integer) }}</td></tr>
+                              <tr><td>IQR</td><td>{{ column.numeric_profile.stats.iqr | format_number(is_integer) }}</td></tr>
+                              <tr><td>Outlier rate</td><td>{{ column.numeric_profile.outlier_rate | format_number(is_integer) }}</td></tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <div class="stats-block">
+                          <div class="panel-title">Quantiles</div>
+                          <table class="table-base text-sm">
+                            <tbody class="divide-y divide-slate-100">
+                              {% for quantile in column.numeric_profile.stats.quantiles %}
+                                <tr><td>{{ quantile.quantile }}</td><td>{{ quantile.value | format_number(is_integer) }}</td></tr>
+                              {% endfor %}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    {% endif %}
+                  </div>
+                </div>
+
+                {% if column.numeric_profile %}
+                  {% if column.numeric_profile.histograms %}
+                    {% set default_histogram = column.numeric_profile.histograms | first %}
+                    {% set default_bin = default_histogram.bin_count if default_histogram else None %}
+                    <div class="variable-visual">
+                      <div class="variable-visual-header">
+                        <div class="panel-title">Histogram</div>
+                        {% if column.numeric_profile.histograms | length > 1 %}
+                          <div class="bin-controls" data-bin-controls data-default-bin="{{ default_bin }}">
+                            {% for histogram in column.numeric_profile.histograms %}
+                              <button
+                                class="button button-compact"
+                                type="button"
+                                data-bin="{{ histogram.bin_count }}"
+                              >
+                                {{ histogram.bin_count }}
+                              </button>
+                            {% endfor %}
+                          </div>
+                        {% endif %}
+                      </div>
+                      <div
+                        class="histogram-chart js-histogram-chart-container"
+                        data-default-bin="{{ default_bin }}"
+                      >
+                        <div class="histogram-canvas">
+                          <canvas class="js-histogram-canvas" aria-label="Histogram chart"></canvas>
+                        </div>
+                        <p class="text-sm text-[var(--color-ink-muted)] hidden js-histogram-empty">
+                          No histogram data.
+                        </p>
+                        <script type="application/json" class="js-histogram-data">
+                          {
+                            "bins": {
+                              {% for histogram in column.numeric_profile.histograms %}
+                                "{{ histogram.bin_count }}": {
+                                  "labels": [
+                                    {% if histogram.bins %}
+                                      {% for bin in histogram.bins %}
+                                        {% if bin.lower == bin.upper %}
+                                          {{ bin.lower | format_number(is_integer) | tojson }}{% if not loop.last %},{% endif %}
+                                        {% else %}
+                                          {{ ((bin.lower | format_number(is_integer)) ~ " - " ~ (bin.upper | format_number(is_integer))) | tojson }}{% if not loop.last %},{% endif %}
+                                        {% endif %}
+                                      {% endfor %}
+                                    {% endif %}
+                                  ],
+                                  "counts": [
+                                    {% if histogram.bins %}
+                                      {% for bin in histogram.bins %}
+                                        {{ bin.count }}{% if not loop.last %},{% endif %}
+                                      {% endfor %}
+                                    {% endif %}
+                                  ]
+                                }{% if not loop.last %},{% endif %}
+                              {% endfor %}
+                            }
+                          }
+                        </script>
+                      </div>
+                    </div>
+                  {% endif %}
+                {% endif %}
+
+                {% if column.categorical_profile %}
+                  {% if column.categorical_profile.histograms %}
+                    {% set default_histogram = column.categorical_profile.histograms | first %}
+                    {% set default_bin = default_histogram.bin_count if default_histogram else None %}
+                    <div class="variable-visual">
+                      <div class="variable-visual-header">
+                        <div class="panel-title">Histogram</div>
+                      </div>
+                      <div
+                        class="histogram-chart js-histogram-chart-container"
+                        data-default-bin="{{ default_bin }}"
+                      >
+                        <div class="histogram-canvas">
+                          <canvas class="js-histogram-canvas" aria-label="Histogram chart"></canvas>
+                        </div>
+                        <p class="text-sm text-[var(--color-ink-muted)] hidden js-histogram-empty">
+                          No histogram data.
+                        </p>
+                        <script type="application/json" class="js-histogram-data">
+                          {
+                            "bins": {
+                              {% for histogram in column.categorical_profile.histograms %}
+                                "{{ histogram.bin_count }}": {
+                                  "labels": [
+                                    {% for label in histogram.labels %}
+                                      {{ label | tojson }}{% if not loop.last %},{% endif %}
+                                    {% endfor %}
+                                  ],
+                                  "counts": [
+                                    {% for count in histogram.counts %}
+                                      {{ count }}{% if not loop.last %},{% endif %}
+                                    {% endfor %}
+                                  ]
+                                }{% if not loop.last %},{% endif %}
+                              {% endfor %}
+                            }
+                          }
+                        </script>
+                      </div>
+                    </div>
+                  {% endif %}
+                {% endif %}
+
+                {% if column.text_profile %}
+                  {% if column.text_profile.length_histograms %}
+                    {% set default_histogram = column.text_profile.length_histograms | first %}
+                    {% set default_bin = default_histogram.bin_count if default_histogram else None %}
+                    <div class="variable-visual">
+                      <div class="variable-visual-header">
+                        <div class="panel-title">Length histogram</div>
+                        {% if column.text_profile.length_histograms | length > 1 %}
+                          <div class="bin-controls" data-bin-controls data-default-bin="{{ default_bin }}">
+                            {% for histogram in column.text_profile.length_histograms %}
+                              <button
+                                class="button button-compact"
+                                type="button"
+                                data-bin="{{ histogram.bin_count }}"
+                              >
+                                {{ histogram.bin_count }}
+                              </button>
+                            {% endfor %}
+                          </div>
+                        {% endif %}
+                      </div>
+                      <div
+                        class="histogram-chart js-histogram-chart-container"
+                        data-default-bin="{{ default_bin }}"
+                      >
+                        <div class="histogram-canvas">
+                          <canvas class="js-histogram-canvas" aria-label="Histogram chart"></canvas>
+                        </div>
+                        <p class="text-sm text-[var(--color-ink-muted)] hidden js-histogram-empty">
+                          No histogram data.
+                        </p>
+                        <script type="application/json" class="js-histogram-data">
+                          {
+                            "bins": {
+                              {% for histogram in column.text_profile.length_histograms %}
+                                "{{ histogram.bin_count }}": {
+                                  "labels": [
+                                    {% if histogram.bins %}
+                                      {% for bin in histogram.bins %}
+                                        {% if bin.lower == bin.upper %}
+                                          {{ bin.lower | format_number(true) | tojson }}{% if not loop.last %},{% endif %}
+                                        {% else %}
+                                          {{ ((bin.lower | format_number(true)) ~ " - " ~ (bin.upper | format_number(true))) | tojson }}{% if not loop.last %},{% endif %}
+                                        {% endif %}
+                                      {% endfor %}
+                                    {% endif %}
+                                  ],
+                                  "counts": [
+                                    {% if histogram.bins %}
+                                      {% for bin in histogram.bins %}
+                                        {{ bin.count }}{% if not loop.last %},{% endif %}
+                                      {% endfor %}
+                                    {% endif %}
+                                  ]
+                                }{% if not loop.last %},{% endif %}
+                              {% endfor %}
+                            }
+                          }
+                        </script>
+                      </div>
+                    </div>
+                  {% endif %}
+                {% endif %}
+
+                {% if column.datetime_profile %}
+                  {% if column.datetime_profile.histograms %}
+                    {% set default_histogram = column.datetime_profile.histograms | first %}
+                    {% set default_bin = default_histogram.bin_count if default_histogram else None %}
+                    <div class="variable-visual">
+                      <div class="variable-visual-header">
+                        <div class="panel-title">Histogram</div>
+                      </div>
+                      <div
+                        class="histogram-chart js-histogram-chart-container"
+                        data-default-bin="{{ default_bin }}"
+                      >
+                        <div class="histogram-canvas">
+                          <canvas class="js-histogram-canvas" aria-label="Histogram chart"></canvas>
+                        </div>
+                        <p class="text-sm text-[var(--color-ink-muted)] hidden js-histogram-empty">
+                          No histogram data.
+                        </p>
+                        <script type="application/json" class="js-histogram-data">
+                          {
+                            "bins": {
+                              {% for histogram in column.datetime_profile.histograms %}
+                                "{{ histogram.bin_count }}": {
+                                  "labels": [
+                                    {% for label in histogram.labels %}
+                                      {{ label | tojson }}{% if not loop.last %},{% endif %}
+                                    {% endfor %}
+                                  ],
+                                  "counts": [
+                                    {% for count in histogram.counts %}
+                                      {{ count }}{% if not loop.last %},{% endif %}
+                                    {% endfor %}
+                                  ]
+                                }{% if not loop.last %},{% endif %}
+                              {% endfor %}
+                            }
+                          }
+                        </script>
+                      </div>
+                    </div>
+                  {% endif %}
+                {% endif %}
+
+                {% if column.numeric_profile %}
+                  <div class="variable-lower value-table-grid-compact">
+                    <div class="value-table">
+                      <div class="panel-title">Most frequent values</div>
+                      <table class="table-base text-sm">
+                        <tbody class="divide-y divide-slate-100">
+                          {% for value in column.numeric_profile.top_values %}
+                            <tr><td>{{ value.value | format_number(is_integer) }}</td><td>{{ value.count }}</td></tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="value-table">
+                      <div class="panel-title">Smallest values</div>
+                      <table class="table-base text-sm">
+                        <tbody class="divide-y divide-slate-100">
+                          {% for value in column.numeric_profile.min_values %}
+                            <tr><td>{{ value.value | format_number(is_integer) }}</td><td>{{ value.count }}</td></tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="value-table">
+                      <div class="panel-title">Largest values</div>
+                      <table class="table-base text-sm">
+                        <tbody class="divide-y divide-slate-100">
+                          {% for value in column.numeric_profile.max_values %}
+                            <tr><td>{{ value.value | format_number(is_integer) }}</td><td>{{ value.count }}</td></tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                {% endif %}
+
+                {% if column.categorical_profile %}
+                  <div class="variable-lower value-table-grid">
+                    <div class="value-table">
+                      <div class="panel-title">Top categories</div>
+                      <table class="table-base text-sm">
+                        <tbody class="divide-y divide-slate-100">
+                          {% for category in column.categorical_profile.top_categories %}
+                            <tr><td>{{ category.category }}</td><td>{{ category.count }}</td></tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                      {% if column.categorical_profile.is_high_cardinality %}
+                        <p class="mt-2 text-xs text-rose-200">High cardinality detected.</p>
+                      {% endif %}
+                    </div>
+                  </div>
+                {% endif %}
+
+                {% if column.datetime_profile %}
+                  <div class="variable-lower value-table-grid">
+                    <div class="value-table">
+                      <div class="panel-title">Datetime range</div>
+                      <div class="summary-rows text-sm">
+                        <div class="summary-row"><span>Min</span><span>{{ column.datetime_profile.min_datetime }}</span></div>
+                        <div class="summary-row"><span>Max</span><span>{{ column.datetime_profile.max_datetime }}</span></div>
+                      </div>
+                    </div>
+                    <div class="value-table">
+                      <div class="panel-title">Most frequent values</div>
+                      <table class="table-base text-sm">
+                        <tbody class="divide-y divide-slate-100">
+                          {% for value in column.datetime_profile.top_values %}
+                            <tr><td>{{ value.value }}</td><td>{{ value.count }}</td></tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                {% endif %}
+
+                {% if column.text_profile %}
+                  <div class="variable-lower value-table-grid">
+                    <div class="value-table">
+                      <div class="panel-title">Most frequent values</div>
+                      <table class="table-base text-sm">
+                        <tbody class="divide-y divide-slate-100">
+                          {% for token in column.text_profile.top_tokens %}
+                            <tr>
+                              <td>
+                                <div>{{ token.token }}</div>
+                                <div class="text-xs text-[var(--color-ink-muted)]">Count: {{ token.count }}</div>
+                              </td>
+                            </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="value-table">
+                      <div class="panel-title">Text length stats</div>
+                      <div class="summary-rows text-sm">
+                        <div class="summary-row"><span>Mean</span><span>{{ column.text_profile.length_stats.mean | format_number(true) }}</span></div>
+                        <div class="summary-row"><span>Median</span><span>{{ column.text_profile.length_stats.median | format_number(true) }}</span></div>
+                        <div class="summary-row"><span>Min</span><span>{{ column.text_profile.length_stats.minimum | format_number(true) }}</span></div>
+                        <div class="summary-row"><span>Max</span><span>{{ column.text_profile.length_stats.maximum | format_number(true) }}</span></div>
+                      </div>
+                    </div>
+                  </div>
+                {% endif %}
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+</section>

@@ -1,0 +1,21 @@
+<header class="mb-8 report-header">
+  <div class="brand">
+    <div class="logo">mitoric</div>
+    <div class="text-xs uppercase tracking-wide text-[var(--color-ink-muted)]">EDA report</div>
+    <p class="text-sm text-[var(--color-ink-muted)]">
+      Mode: {% if payload.mode == "single" %}Single{% else %}Compare{% endif %}
+    </p>
+  </div>
+  <div class="tag">
+    {% if payload.mode == "single" %}single dataset{% else %}comparison{% endif %}
+  </div>
+  {% if payload.warnings %}
+    <div class="mt-4 space-y-2">
+      {% for warning in payload.warnings %}
+        <div class="rounded-xl border border-orange-400/50 bg-orange-500/15 px-4 py-2 text-sm text-orange-50 shadow-lg shadow-orange-500/20">
+          {{ warning }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</header>

@@ -1,0 +1,147 @@
+<section id="dataset-summary" data-section="dataset-summary" class="space-y-4">
+  <div class="section-head">
+    <h2 class="text-xl font-semibold text-white">Dataset Summary</h2>
+    <span class="text-xs uppercase tracking-wide text-[var(--color-ink-muted)]">Composition</span>
+  </div>
+  {% if payload.mode == "single" %}
+    <div class="grid gap-6 md:grid-cols-2">
+      <div class="panel">
+        <p class="panel-title">Counts</p>
+        <div class="dataset-number-grid mt-4">
+          <div class="dataset-number" title="Rows" aria-label="Rows">
+            <span class="dataset-number-label">Rows</span>
+            <span class="dataset-number-value">{{ payload.dataset_summary.row_count }}</span>
+          </div>
+          <div class="dataset-number" title="Columns" aria-label="Columns">
+            <span class="dataset-number-label">Columns</span>
+            <span class="dataset-number-value">{{ payload.dataset_summary.column_count }}</span>
+          </div>
+          <div class="dataset-number" title="Duplicate rows" aria-label="Duplicate rows">
+            <span class="dataset-number-label">Duplicate rows</span>
+            <span class="dataset-number-value">{{ payload.dataset_summary.duplicate_rows }}</span>
+          </div>
+          <div class="dataset-number" title="Memory" aria-label="Memory">
+            <span class="dataset-number-label">Memory</span>
+            <span class="dataset-number-value">{{ payload.dataset_summary.memory_bytes | format_bytes }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <p class="panel-title">Type counts</p>
+        <div class="dataset-number-grid mt-4">
+          <div class="dataset-number" title="Numeric" aria-label="Numeric">
+            <span class="dataset-number-label">Numeric</span>
+            <span class="dataset-number-value">{{ payload.dataset_summary.type_counts.numeric }}</span>
+          </div>
+          <div class="dataset-number" title="Categorical" aria-label="Categorical">
+            <span class="dataset-number-label">Categorical</span>
+            <span class="dataset-number-value">{{ payload.dataset_summary.type_counts.categorical }}</span>
+          </div>
+          <div class="dataset-number" title="Text" aria-label="Text">
+            <span class="dataset-number-label">Text</span>
+            <span class="dataset-number-value">{{ payload.dataset_summary.type_counts.text }}</span>
+          </div>
+          <div class="dataset-number" title="Datetime" aria-label="Datetime">
+            <span class="dataset-number-label">Datetime</span>
+            <span class="dataset-number-value">{{ payload.dataset_summary.type_counts.datetime }}</span>
+          </div>
+          <div class="dataset-number" title="Boolean" aria-label="Boolean">
+            <span class="dataset-number-label">Boolean</span>
+            <span class="dataset-number-value">{{ payload.dataset_summary.type_counts.boolean }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <div class="grid gap-6 md:grid-cols-2">
+      <div class="panel">
+        <p class="panel-title">{{ payload.comparison_summary.left_dataset.dataset_id }} composition</p>
+        <div class="dataset-number-grid mt-4">
+          <div class="dataset-number" title="Rows" aria-label="Rows">
+            <span class="dataset-number-label">Rows</span>
+            <span class="dataset-number-value">{{ payload.comparison_summary.left_dataset.row_count }}</span>
+          </div>
+          <div class="dataset-number" title="Columns" aria-label="Columns">
+            <span class="dataset-number-label">Columns</span>
+            <span class="dataset-number-value">{{ payload.comparison_summary.left_dataset.column_count }}</span>
+          </div>
+          <div class="dataset-number" title="Duplicate rows" aria-label="Duplicate rows">
+            <span class="dataset-number-label">Duplicate rows</span>
+            <span class="dataset-number-value">{{ payload.comparison_summary.left_dataset.duplicate_rows }}</span>
+          </div>
+          <div class="dataset-number" title="Memory" aria-label="Memory">
+            <span class="dataset-number-label">Memory</span>
+            <span class="dataset-number-value">{{ payload.comparison_summary.left_dataset.memory_bytes | format_bytes }}</span>
+          </div>
+        </div>
+        <div class="panel-subtitle mt-4">Type counts</div>
+        <div class="dataset-number-grid mt-2">
+          <div class="dataset-number" title="Numeric" aria-label="Numeric">
+            <span class="dataset-number-label">Numeric</span>
+            <span class="dataset-number-value">{{ payload.comparison_summary.left_dataset.type_counts.numeric }}</span>
+          </div>
+          <div class="dataset-number" title="Categorical" aria-label="Categorical">
+            <span class="dataset-number-label">Categorical</span>
+            <span class="dataset-number-value">{{ payload.comparison_summary.left_dataset.type_counts.categorical }}</span>
+          </div>
+          <div class="dataset-number" title="Text" aria-label="Text">
+            <span class="dataset-number-label">Text</span>
+            <span class="dataset-number-value">{{ payload.comparison_summary.left_dataset.type_counts.text }}</span>
+          </div>
+          <div class="dataset-number" title="Datetime" aria-label="Datetime">
+            <span class="dataset-number-label">Datetime</span>
+            <span class="dataset-number-value">{{ payload.comparison_summary.left_dataset.type_counts.datetime }}</span>
+          </div>
+          <div class="dataset-number" title="Boolean" aria-label="Boolean">
+            <span class="dataset-number-label">Boolean</span>
+            <span class="dataset-number-value">{{ payload.comparison_summary.left_dataset.type_counts.boolean }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <p class="panel-title">{{ payload.comparison_summary.right_dataset.dataset_id }} composition</p>
+        <div class="dataset-number-grid mt-4">
+          <div class="dataset-number" title="Rows" aria-label="Rows">
+            <span class="dataset-number-label">Rows</span>
+            <span class="dataset-number-value">{{ payload.comparison_summary.right_dataset.row_count }}</span>
+          </div>
+          <div class="dataset-number" title="Columns" aria-label="Columns">
+            <span class="dataset-number-label">Columns</span>
+            <span class="dataset-number-value">{{ payload.comparison_summary.right_dataset.column_count }}</span>
+          </div>
+          <div class="dataset-number" title="Duplicate rows" aria-label="Duplicate rows">
+            <span class="dataset-number-label">Duplicate rows</span>
+            <span class="dataset-number-value">{{ payload.comparison_summary.right_dataset.duplicate_rows }}</span>
+          </div>
+          <div class="dataset-number" title="Memory" aria-label="Memory">
+            <span class="dataset-number-label">Memory</span>
+            <span class="dataset-number-value">{{ payload.comparison_summary.right_dataset.memory_bytes | format_bytes }}</span>
+          </div>
+        </div>
+        <div class="panel-subtitle mt-4">Type counts</div>
+        <div class="dataset-number-grid mt-2">
+          <div class="dataset-number" title="Numeric" aria-label="Numeric">
+            <span class="dataset-number-label">Numeric</span>
+            <span class="dataset-number-value">{{ payload.comparison_summary.right_dataset.type_counts.numeric }}</span>
+          </div>
+          <div class="dataset-number" title="Categorical" aria-label="Categorical">
+            <span class="dataset-number-label">Categorical</span>
+            <span class="dataset-number-value">{{ payload.comparison_summary.right_dataset.type_counts.categorical }}</span>
+          </div>
+          <div class="dataset-number" title="Text" aria-label="Text">
+            <span class="dataset-number-label">Text</span>
+            <span class="dataset-number-value">{{ payload.comparison_summary.right_dataset.type_counts.text }}</span>
+          </div>
+          <div class="dataset-number" title="Datetime" aria-label="Datetime">
+            <span class="dataset-number-label">Datetime</span>
+            <span class="dataset-number-value">{{ payload.comparison_summary.right_dataset.type_counts.datetime }}</span>
+          </div>
+          <div class="dataset-number" title="Boolean" aria-label="Boolean">
+            <span class="dataset-number-label">Boolean</span>
+            <span class="dataset-number-value">{{ payload.comparison_summary.right_dataset.type_counts.boolean }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</section>

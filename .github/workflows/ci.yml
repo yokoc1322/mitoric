@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up repository
+        uses: ./.github/actions/setup-this-repository
+
+      - name: Lint
+        run: make lint
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up repository
+        uses: ./.github/actions/setup-this-repository
+
+      - name: Test
+        run: make test
+
+  test-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up repository
+        uses: ./.github/actions/setup-this-repository
+
+      - name: Test e2e 
+        run: make test_e2e
+
+      - name: Upload example artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: example-report
+          path: examples/output/
+          if-no-files-found: error
+          retention-days: 3

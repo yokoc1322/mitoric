@@ -1,0 +1,16 @@
+{% extends "layout/base.html" %}
+
+{% block content %}
+  {% include "partials/_overview.html" %}
+  {% include "partials/_dataset_summary.html" %}
+  {% if payload.mode == "compare" %}
+    <div class="space-y-10">
+      {% include "partials/_variables.html" %}
+    </div>
+  {% else %}
+    <div class="space-y-10">
+      {% include "partials/_variables.html" %}
+      {% include "partials/_associations.html" %}
+    </div>
+  {% endif %}
+{% endblock %}

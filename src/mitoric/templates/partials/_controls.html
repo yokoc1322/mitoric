@@ -1,0 +1,25 @@
+<section id="controls" class="control-bar">
+  <div class="control-group">
+    <label class="text-xs uppercase tracking-wide text-[var(--color-ink-muted)]" for="column-search">
+      Column search
+    </label>
+    <input
+      id="column-search"
+      class="input mt-2"
+      type="search"
+      placeholder="Search columns"
+      data-search-input
+    />
+  </div>
+  <div class="control-group" data-collapse-controls>
+    <button class="button" type="button" data-target="variables">Variables</button>
+    {% if payload.mode != "compare" %}
+      <button class="button" type="button" data-target="associations">Associations</button>
+    {% endif %}
+  </div>
+  <div class="control-group" data-bin-controls data-default-bin="{{ payload.histogram_bins | first }}">
+    {% for bin in payload.histogram_bins %}
+      <button class="button" type="button" data-bin="{{ bin }}">{{ bin }}</button>
+    {% endfor %}
+  </div>
+</section>

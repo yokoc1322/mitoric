@@ -1,0 +1,62 @@
+<section id="associations" data-section="associations" class="space-y-4">
+  <div class="section-head">
+    <h2 class="text-xl font-semibold text-white">Associations</h2>
+    <span class="text-xs uppercase tracking-wide text-[var(--color-ink-muted)]">Relationships</span>
+  </div>
+  {% if payload.mode != "single" %}
+    <div class="panel text-sm text-[var(--color-ink)]">
+      Association metrics are available in single report mode.
+    </div>
+  {% else %}
+    <div class="grid gap-6">
+      <div class="panel">
+        <p class="panel-title">Numerical associations</p>
+        <p class="panel-subtitle">Metric: Pearson r (linear correlation, -1 to 1)</p>
+        {% if payload.associations.numeric_numeric %}
+          <div class="assoc-list">
+            {% for item in payload.associations.numeric_numeric %}
+              <div class="assoc-row">
+                <span>{{ item.left }} × {{ item.right }}</span>
+                <span>{{ item.value }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-sm text-[var(--color-ink-muted)]">No numeric associations.</p>
+        {% endif %}
+      </div>
+      <div class="panel">
+        <p class="panel-title">Categorical associations</p>
+        <p class="panel-subtitle">Metric: Cramer's V (association strength, 0 to 1)</p>
+        {% if payload.associations.categorical_categorical %}
+          <div class="assoc-list">
+            {% for item in payload.associations.categorical_categorical %}
+              <div class="assoc-row">
+                <span>{{ item.left }} × {{ item.right }}</span>
+                <span>{{ item.value }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-sm text-[var(--color-ink-muted)]">No categorical associations.</p>
+        {% endif %}
+      </div>
+      <div class="panel">
+        <p class="panel-title">Mixed associations</p>
+        <p class="panel-subtitle">Metric: Correlation ratio η (numeric vs category, 0 to 1)</p>
+        {% if payload.associations.numeric_categorical %}
+          <div class="assoc-list">
+            {% for item in payload.associations.numeric_categorical %}
+              <div class="assoc-row">
+                <span>{{ item.left }} × {{ item.right }}</span>
+                <span>{{ item.value }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-sm text-[var(--color-ink-muted)]">No mixed associations.</p>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+</section>
