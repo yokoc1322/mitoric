@@ -4,6 +4,8 @@
 
 A library that generates EDA / comparison reports for Polars DataFrames as a single HTML file.
 
+[PyPI](https://pypi.org/project/mitoric/)
+
 ## Features
 
 - Generate a report for a single dataset

@@ -2,6 +2,8 @@
 
 Polars DataFrame 向けの EDA / 比較レポートを単一 HTML として生成するライブラリです。
 
+[PyPI](https://pypi.org/project/mitoric/)
+
 ## 特長
 
 - 単一データセットのレポート生成
