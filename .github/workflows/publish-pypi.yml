@@ -1,9 +1,9 @@
-name: publish-testpypi
+name: publish-pypi
 
-# on:
-#   push:
-#     tags:
-#       - "v*"
+on:
+  push:
+    tags:
+      - "v*"
 
 jobs:
   build:
@@ -31,8 +31,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     environment:
-      name: testpypi
-      url: https://test.pypi.org/p/mitoric/
+      name: pypi
+      url: https://pypi.org/p/mitoric/
     permissions:
       id-token: write
     steps:
@@ -41,7 +41,5 @@ jobs:
       with:
         name: python-package-distributions
         path: dist/
-    - name: Publish to TestPyPI
+    - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        repository-url: https://test.pypi.org/legacy/
