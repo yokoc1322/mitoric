@@ -40,6 +40,27 @@
                       </table>
                     </div>
                   </div>
+                  {% if column.list_profile.value_samples %}
+                    <div class="value-table">
+                      <div class="panel-title">Sample values</div>
+                      <ul class="list-disc space-y-1 pl-5 text-sm text-[var(--color-ink)]">
+                        {% for sample in column.list_profile.value_samples %}
+                          <li class="break-all">{{ sample }}</li>
+                        {% endfor %}
+                      </ul>
+                    </div>
+                  {% endif %}
+                {% endif %}
+
+                {% if column.value_samples and not column.list_profile %}
+                  <div class="value-table">
+                    <div class="panel-title">Sample values</div>
+                    <ul class="list-disc space-y-1 pl-5 text-sm text-[var(--color-ink)]">
+                      {% for sample in column.value_samples %}
+                        <li class="break-all">{{ sample }}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
                 {% endif %}
 
                 {% if column.numeric_profile %}
@@ -171,6 +192,70 @@
                                 {% for count in histogram.counts %}
                                   {{ count }}{% if not loop.last %},{% endif %}
                                 {% endfor %}
+                              ]
+                            }{% if not loop.last %},{% endif %}
+                          {% endfor %}
+                        }
+                      }
+                    </script>
+                  </div>
+                </div>
+              {% endif %}
+            {% endif %}
+
+            {% if column.list_profile %}
+              {% if column.list_profile.length_histograms %}
+                {% set default_histogram = column.list_profile.length_histograms | first %}
+                {% set default_bin = default_histogram.bin_count if default_histogram else None %}
+                <div class="variable-visual">
+                  <div class="variable-visual-header">
+                    <div class="panel-title">Length histogram</div>
+                    {% if column.list_profile.length_histograms | length > 1 %}
+                      <div class="bin-controls" data-bin-controls data-default-bin="{{ default_bin }}">
+                        {% for histogram in column.list_profile.length_histograms %}
+                          <button
+                            class="button button-compact"
+                            type="button"
+                            data-bin="{{ histogram.bin_count }}"
+                          >
+                            {{ histogram.bin_count }}
+                          </button>
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  </div>
+                  <div
+                    class="histogram-chart js-histogram-chart-container"
+                    data-default-bin="{{ default_bin }}"
+                  >
+                    <div class="histogram-canvas">
+                      <canvas class="js-histogram-canvas" aria-label="Histogram chart"></canvas>
+                    </div>
+                    <p class="text-sm text-[var(--color-ink-muted)] hidden js-histogram-empty">
+                      No histogram data.
+                    </p>
+                    <script type="application/json" class="js-histogram-data">
+                      {
+                        "bins": {
+                          {% for histogram in column.list_profile.length_histograms %}
+                            "{{ histogram.bin_count }}": {
+                              "labels": [
+                                {% if histogram.bins %}
+                                  {% for bin in histogram.bins %}
+                                    {% if bin.lower == bin.upper %}
+                                      {{ bin.lower | format_number(true) | tojson }}{% if not loop.last %},{% endif %}
+                                    {% else %}
+                                      {{ ((bin.lower | format_number(true)) ~ " - " ~ (bin.upper | format_number(true))) | tojson }}{% if not loop.last %},{% endif %}
+                                    {% endif %}
+                                  {% endfor %}
+                                {% endif %}
+                              ],
+                              "counts": [
+                                {% if histogram.bins %}
+                                  {% for bin in histogram.bins %}
+                                    {{ bin.count }}{% if not loop.last %},{% endif %}
+                                  {% endfor %}
+                                {% endif %}
                               ]
                             }{% if not loop.last %},{% endif %}
                           {% endfor %}
@@ -442,6 +527,89 @@
                           </table>
                         </div>
                       </div>
+                      {% if column.left_profile.list_profile.value_samples %}
+                        <div class="value-table">
+                          <div class="panel-title">Sample values</div>
+                          <ul class="list-disc space-y-1 pl-5 text-sm text-[var(--color-ink)]">
+                            {% for sample in column.left_profile.list_profile.value_samples %}
+                              <li class="break-all">{{ sample }}</li>
+                            {% endfor %}
+                          </ul>
+                        </div>
+                      {% endif %}
+                    {% endif %}
+
+                    {% if column.left_profile.value_samples and not column.left_profile.list_profile %}
+                      <div class="value-table">
+                        <div class="panel-title">Sample values</div>
+                        <ul class="list-disc space-y-1 pl-5 text-sm text-[var(--color-ink)]">
+                          {% for sample in column.left_profile.value_samples %}
+                            <li class="break-all">{{ sample }}</li>
+                          {% endfor %}
+                        </ul>
+                      </div>
+                    {% endif %}
+
+                    {% if column.left_profile.list_profile and column.left_profile.list_profile.length_histograms %}
+                      {% set default_histogram = column.left_profile.list_profile.length_histograms | first %}
+                      {% set default_bin = default_histogram.bin_count if default_histogram else None %}
+                      <div class="variable-visual">
+                        <div class="variable-visual-header">
+                          <div class="panel-title">Length histogram</div>
+                          {% if column.left_profile.list_profile.length_histograms | length > 1 %}
+                            <div class="bin-controls" data-bin-controls data-default-bin="{{ default_bin }}">
+                              {% for histogram in column.left_profile.list_profile.length_histograms %}
+                                <button
+                                  class="button button-compact"
+                                  type="button"
+                                  data-bin="{{ histogram.bin_count }}"
+                                >
+                                  {{ histogram.bin_count }}
+                                </button>
+                              {% endfor %}
+                            </div>
+                          {% endif %}
+                        </div>
+                        <div
+                          class="histogram-chart js-histogram-chart-container"
+                          data-default-bin="{{ default_bin }}"
+                        >
+                          <div class="histogram-canvas">
+                            <canvas class="js-histogram-canvas" aria-label="Histogram chart"></canvas>
+                          </div>
+                          <p class="text-sm text-[var(--color-ink-muted)] hidden js-histogram-empty">
+                            No histogram data.
+                          </p>
+                          <script type="application/json" class="js-histogram-data">
+                            {
+                              "bins": {
+                                {% for histogram in column.left_profile.list_profile.length_histograms %}
+                                  "{{ histogram.bin_count }}": {
+                                    "labels": [
+                                      {% if histogram.bins %}
+                                        {% for bin in histogram.bins %}
+                                          {% if bin.lower == bin.upper %}
+                                            {{ bin.lower | format_number(true) | tojson }}{% if not loop.last %},{% endif %}
+                                          {% else %}
+                                            {{ ((bin.lower | format_number(true)) ~ " - " ~ (bin.upper | format_number(true))) | tojson }}{% if not loop.last %},{% endif %}
+                                          {% endif %}
+                                        {% endfor %}
+                                      {% endif %}
+                                    ],
+                                    "counts": [
+                                      {% if histogram.bins %}
+                                        {% for bin in histogram.bins %}
+                                          {{ bin.count }}{% if not loop.last %},{% endif %}
+                                        {% endfor %}
+                                      {% endif %}
+                                    ]
+                                  }{% if not loop.last %},{% endif %}
+                                {% endfor %}
+                              }
+                            }
+                          </script>
+                        </div>
+                      </div>
                     {% endif %}
 
                     {% if column.left_profile.numeric_profile %}
@@ -595,6 +763,89 @@
                               <tr><td>Median</td><td>{{ column.right_profile.list_profile.length_stats.median | format_number(false) }}</td></tr>
                             </tbody>
                           </table>
+                        </div>
+                      </div>
+                      {% if column.right_profile.list_profile.value_samples %}
+                        <div class="value-table">
+                          <div class="panel-title">Sample values</div>
+                          <ul class="list-disc space-y-1 pl-5 text-sm text-[var(--color-ink)]">
+                            {% for sample in column.right_profile.list_profile.value_samples %}
+                              <li class="break-all">{{ sample }}</li>
+                            {% endfor %}
+                          </ul>
+                        </div>
+                      {% endif %}
+                    {% endif %}
+
+                    {% if column.right_profile.value_samples and not column.right_profile.list_profile %}
+                      <div class="value-table">
+                        <div class="panel-title">Sample values</div>
+                        <ul class="list-disc space-y-1 pl-5 text-sm text-[var(--color-ink)]">
+                          {% for sample in column.right_profile.value_samples %}
+                            <li class="break-all">{{ sample }}</li>
+                          {% endfor %}
+                        </ul>
+                      </div>
+                    {% endif %}
+
+                    {% if column.right_profile.list_profile and column.right_profile.list_profile.length_histograms %}
+                      {% set default_histogram = column.right_profile.list_profile.length_histograms | first %}
+                      {% set default_bin = default_histogram.bin_count if default_histogram else None %}
+                      <div class="variable-visual">
+                        <div class="variable-visual-header">
+                          <div class="panel-title">Length histogram</div>
+                          {% if column.right_profile.list_profile.length_histograms | length > 1 %}
+                            <div class="bin-controls" data-bin-controls data-default-bin="{{ default_bin }}">
+                              {% for histogram in column.right_profile.list_profile.length_histograms %}
+                                <button
+                                  class="button button-compact"
+                                  type="button"
+                                  data-bin="{{ histogram.bin_count }}"
+                                >
+                                  {{ histogram.bin_count }}
+                                </button>
+                              {% endfor %}
+                            </div>
+                          {% endif %}
+                        </div>
+                        <div
+                          class="histogram-chart js-histogram-chart-container"
+                          data-default-bin="{{ default_bin }}"
+                        >
+                          <div class="histogram-canvas">
+                            <canvas class="js-histogram-canvas" aria-label="Histogram chart"></canvas>
+                          </div>
+                          <p class="text-sm text-[var(--color-ink-muted)] hidden js-histogram-empty">
+                            No histogram data.
+                          </p>
+                          <script type="application/json" class="js-histogram-data">
+                            {
+                              "bins": {
+                                {% for histogram in column.right_profile.list_profile.length_histograms %}
+                                  "{{ histogram.bin_count }}": {
+                                    "labels": [
+                                      {% if histogram.bins %}
+                                        {% for bin in histogram.bins %}
+                                          {% if bin.lower == bin.upper %}
+                                            {{ bin.lower | format_number(true) | tojson }}{% if not loop.last %},{% endif %}
+                                          {% else %}
+                                            {{ ((bin.lower | format_number(true)) ~ " - " ~ (bin.upper | format_number(true))) | tojson }}{% if not loop.last %},{% endif %}
+                                          {% endif %}
+                                        {% endfor %}
+                                      {% endif %}
+                                    ],
+                                    "counts": [
+                                      {% if histogram.bins %}
+                                        {% for bin in histogram.bins %}
+                                          {{ bin.count }}{% if not loop.last %},{% endif %}
+                                        {% endfor %}
+                                      {% endif %}
+                                    ]
+                                  }{% if not loop.last %},{% endif %}
+                                {% endfor %}
+                              }
+                            }
+                          </script>
                         </div>
                       </div>
                     {% endif %}
@@ -839,6 +1090,27 @@
                             </tbody>
                           </table>
                         </div>
+                      </div>
+                      {% if column.list_profile.value_samples %}
+                        <div class="value-table">
+                          <div class="panel-title">Sample values</div>
+                          <ul class="list-disc space-y-1 pl-5 text-sm text-[var(--color-ink)]">
+                            {% for sample in column.list_profile.value_samples %}
+                              <li class="break-all">{{ sample }}</li>
+                            {% endfor %}
+                          </ul>
+                        </div>
+                      {% endif %}
+                    {% endif %}
+
+                    {% if column.value_samples and not column.list_profile %}
+                      <div class="value-table">
+                        <div class="panel-title">Sample values</div>
+                        <ul class="list-disc space-y-1 pl-5 text-sm text-[var(--color-ink)]">
+                          {% for sample in column.value_samples %}
+                            <li class="break-all">{{ sample }}</li>
+                          {% endfor %}
+                        </ul>
                       </div>
                     {% endif %}
 

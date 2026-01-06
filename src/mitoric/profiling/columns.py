@@ -21,6 +21,7 @@ from mitoric.profiling.profiles.datetime import build_datetime_profile
 from mitoric.profiling.profiles.list_profile import build_list_profile
 from mitoric.profiling.profiles.numeric import build_numeric_profile
 from mitoric.profiling.profiles.text import build_text_profile
+from mitoric.profiling.utils.sampling import collect_sample_values
 from mitoric.profiling.utils.type_utils import (
     infer_column_type,
     is_numeric_dtype,
@@ -84,6 +85,7 @@ def profile_columns(
         text_profile = None
         datetime_profile = None
         list_profile = None
+        value_samples: list[str] = []
 
         if include_details and detail_supported:
             if data_type == ColumnType.NUMERIC:
@@ -105,6 +107,9 @@ def profile_columns(
             elif data_type == ColumnType.LIST:
                 list_profile = build_list_profile(series)
 
+        if data_type == ColumnType.STRUCT or include_details and not detail_supported:
+            value_samples = collect_sample_values(series)
+
         profiles.append(
             ColumnProfile(
                 column_name=column_name,
@@ -119,6 +124,7 @@ def profile_columns(
                 text_profile=text_profile,
                 datetime_profile=datetime_profile,
                 list_profile=list_profile,
+                value_samples=value_samples,
             )
         )
 

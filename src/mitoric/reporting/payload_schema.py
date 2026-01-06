@@ -141,6 +141,8 @@ class ListLengthStatsPayload(TypedDict):
 
 class ListProfilePayload(TypedDict):
     length_stats: ListLengthStatsPayload
+    length_histograms: list[HistogramPayload]
+    value_samples: list[str]
 
 
 class DatetimeValueCountPayload(TypedDict):
@@ -168,6 +170,7 @@ class ColumnProfilePayload(TypedDict):
     text_profile: TextProfilePayload | None
     datetime_profile: DatetimeProfilePayload | None
     list_profile: ListProfilePayload | None
+    value_samples: list[str]
 
 
 class CompareColumnProfilePayload(TypedDict):
