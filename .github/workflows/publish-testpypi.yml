@@ -1,9 +1,14 @@
 name: publish-testpypi
 
-# on:
-#   push:
-#     tags:
-#       - "v*"
+
+on:
+  # push:
+  #   tags:
+  #     - "v*"
+
+  # dummy on trigger
+  workflow_call:
+
 
 jobs:
   build:
