@@ -151,6 +151,13 @@ def normalize_datetime_values(
             normalized = normalized.rename("value")
         return normalized, numeric.cast(pl.Float64).rename("numeric"), True
 
+    if series.dtype == pl.Duration:
+        normalized = series.cast(pl.Utf8)
+        numeric = series.cast(pl.Int64).cast(pl.Float64)
+        if normalized.name != "value":
+            normalized = normalized.rename("value")
+        return normalized, numeric.rename("numeric"), False
+
     if series.dtype == pl.Datetime:
         date_series = series.dt.date()
     else:
