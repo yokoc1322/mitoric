@@ -214,3 +214,47 @@ def test_struct_profile_limits_analysis() -> None:
     assert struct_profile.categorical_profile is None
     assert struct_profile.text_profile is None
     assert struct_profile.datetime_profile is None
+
+
+def test_binary_column_profile_uses_lengths() -> None:
+    frame = pl.DataFrame(
+        {"payload": [b"", b"abc", None]}, schema={"payload": pl.Binary}
+    )
+
+    profiles = profile_columns(frame, target_columns=None, explicit_types=None)
+    profile_map = {profile.column_name: profile for profile in profiles}
+    binary_profile = profile_map[ColumnName("payload")]
+
+    assert binary_profile.data_type == ColumnType.NUMERIC
+    assert binary_profile.zero_count == 1
+    assert binary_profile.numeric_profile is not None
+    assert binary_profile.numeric_profile.stats.minimum == 0.0
+    assert binary_profile.numeric_profile.stats.maximum == 3.0
+
+
+def test_object_column_skips_detailed_profiles() -> None:
+    frame = pl.DataFrame({"object_col": [object(), None]})
+
+    profiles = profile_columns(frame, target_columns=None, explicit_types=None)
+    profile_map = {profile.column_name: profile for profile in profiles}
+    object_profile = profile_map[ColumnName("object_col")]
+
+    assert object_profile.data_type == ColumnType.CATEGORICAL
+    assert object_profile.categorical_profile is None
+    assert object_profile.numeric_profile is None
+    assert object_profile.text_profile is None
+    assert object_profile.datetime_profile is None
+
+
+def test_array_column_uses_list_profile() -> None:
+    frame = pl.DataFrame(
+        {"array_col": pl.Series([[1, 2], [3, 4], None], dtype=pl.Array(pl.Int64, 2))}
+    )
+
+    profiles = profile_columns(frame, target_columns=None, explicit_types=None)
+    profile_map = {profile.column_name: profile for profile in profiles}
+    array_profile = profile_map[ColumnName("array_col")]
+
+    assert array_profile.data_type == ColumnType.LIST
+    assert array_profile.list_profile is not None
+    assert array_profile.list_profile.length_stats.minimum == 2

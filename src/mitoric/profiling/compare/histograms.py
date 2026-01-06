@@ -15,7 +15,9 @@ from mitoric.profiling.histograms.builder import (
 )
 from mitoric.profiling.histograms.config import HISTOGRAM_BINS
 from mitoric.profiling.utils.constants import TOP_VALUES_LIMIT
-from mitoric.profiling.utils.type_utils import is_integer_dtype
+from mitoric.profiling.utils.type_utils import (
+    normalize_numeric_series,
+)
 from mitoric.render.formatters import _format_number_label, _format_numeric_bin_label
 
 
@@ -308,12 +310,12 @@ def build_compare_histograms_for_column(
     if left_type != right_type:
         return []
     if left_type == ColumnType.NUMERIC:
-        is_integer = is_integer_dtype(left_series.dtype) and is_integer_dtype(
-            right_series.dtype
-        )
+        left_numeric, left_is_integer = normalize_numeric_series(left_series)
+        right_numeric, right_is_integer = normalize_numeric_series(right_series)
+        is_integer = left_is_integer and right_is_integer
         return build_compare_numeric_histograms(
-            left_series.drop_nulls().cast(pl.Float64),
-            right_series.drop_nulls().cast(pl.Float64),
+            left_numeric.drop_nulls().cast(pl.Float64),
+            right_numeric.drop_nulls().cast(pl.Float64),
             is_integer=is_integer,
         )
     if left_type in (ColumnType.CATEGORICAL, ColumnType.BOOLEAN):

@@ -23,8 +23,9 @@ from mitoric.profiling.profiles.numeric import build_numeric_profile
 from mitoric.profiling.profiles.text import build_text_profile
 from mitoric.profiling.utils.type_utils import (
     infer_column_type,
-    is_integer_dtype,
     is_numeric_dtype,
+    needs_basic_statistics_only,
+    normalize_numeric_series,
 )
 
 
@@ -35,6 +36,14 @@ def _apply_explicit_type(
         if explicit.column_name == column_name:
             return explicit.data_type
     return inferred
+
+
+def _unique_count(series: pl.Series) -> int:
+    try:
+        return series.n_unique()
+    except pl.exceptions.InvalidOperationError:
+        values = [repr(value) for value in series.to_list() if value is not None]
+        return len(set(values))
 
 
 def profile_columns(
@@ -57,12 +66,18 @@ def profile_columns(
         null_count = series.null_count()
         non_null_count = row_count - null_count
         null_rate = null_count / row_count if row_count else 0.0
-        unique_count = series.n_unique()
+        unique_count = _unique_count(series)
         zero_count = 0
-        if is_numeric_dtype(series.dtype):
+        numeric_input = series
+        numeric_is_integer = False
+        if data_type == ColumnType.NUMERIC:
+            numeric_input, numeric_is_integer = normalize_numeric_series(series)
+            zero_count = int(numeric_input.drop_nulls().eq(0).sum())
+        elif is_numeric_dtype(series.dtype):
             zero_count = int(series.drop_nulls().eq(0).sum())
 
         include_details = not target_set or column_name in target_set
+        detail_supported = not needs_basic_statistics_only(series.dtype)
 
         numeric_profile = None
         categorical_profile = None
@@ -70,11 +85,11 @@ def profile_columns(
         datetime_profile = None
         list_profile = None
 
-        if include_details:
+        if include_details and detail_supported:
             if data_type == ColumnType.NUMERIC:
-                is_integer = is_integer_dtype(series.dtype)
                 numeric_profile = build_numeric_profile(
-                    series.drop_nulls().cast(pl.Float64), is_integer=is_integer
+                    numeric_input.drop_nulls().cast(pl.Float64),
+                    is_integer=numeric_is_integer,
                 )
             elif data_type in (ColumnType.CATEGORICAL, ColumnType.BOOLEAN):
                 category_series = series.drop_nulls().cast(pl.Utf8)
