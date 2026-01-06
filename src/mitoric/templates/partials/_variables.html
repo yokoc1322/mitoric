@@ -26,6 +26,22 @@
                   <div class="meta-row"><span>Zeroes</span><span>{{ column.zero_count }}</span></div>
                 </div>
 
+                {% if column.list_profile %}
+                  <div class="variable-stats-grid">
+                    <div class="stats-block">
+                      <div class="panel-title">List length</div>
+                      <table class="table-base text-sm">
+                        <tbody class="divide-y divide-slate-100">
+                          <tr><td>Min</td><td>{{ column.list_profile.length_stats.minimum }}</td></tr>
+                          <tr><td>Max</td><td>{{ column.list_profile.length_stats.maximum }}</td></tr>
+                          <tr><td>Mean</td><td>{{ column.list_profile.length_stats.mean | format_number(false) }}</td></tr>
+                          <tr><td>Median</td><td>{{ column.list_profile.length_stats.median | format_number(false) }}</td></tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                {% endif %}
+
                 {% if column.numeric_profile %}
                   <div class="variable-stats-grid">
                     <div class="stats-block">
@@ -412,6 +428,22 @@
                       <div class="meta-row"><span>Zeroes</span><span>{{ column.left_profile.zero_count }}</span></div>
                     </div>
 
+                    {% if column.left_profile.list_profile %}
+                      <div class="variable-stats-grid">
+                        <div class="stats-block">
+                          <div class="panel-title">List length</div>
+                          <table class="table-base text-sm">
+                            <tbody class="divide-y divide-slate-100">
+                              <tr><td>Min</td><td>{{ column.left_profile.list_profile.length_stats.minimum }}</td></tr>
+                              <tr><td>Max</td><td>{{ column.left_profile.list_profile.length_stats.maximum }}</td></tr>
+                              <tr><td>Mean</td><td>{{ column.left_profile.list_profile.length_stats.mean | format_number(false) }}</td></tr>
+                              <tr><td>Median</td><td>{{ column.left_profile.list_profile.length_stats.median | format_number(false) }}</td></tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    {% endif %}
+
                     {% if column.left_profile.numeric_profile %}
                       {% set left_integer = column.left_profile.numeric_profile.is_integer %}
                       <div class="variable-stats-grid">
@@ -550,6 +582,22 @@
                       <div class="meta-row"><span>Distinct</span><span>{{ column.right_profile.unique_count }}</span></div>
                       <div class="meta-row"><span>Zeroes</span><span>{{ column.right_profile.zero_count }}</span></div>
                     </div>
+
+                    {% if column.right_profile.list_profile %}
+                      <div class="variable-stats-grid">
+                        <div class="stats-block">
+                          <div class="panel-title">List length</div>
+                          <table class="table-base text-sm">
+                            <tbody class="divide-y divide-slate-100">
+                              <tr><td>Min</td><td>{{ column.right_profile.list_profile.length_stats.minimum }}</td></tr>
+                              <tr><td>Max</td><td>{{ column.right_profile.list_profile.length_stats.maximum }}</td></tr>
+                              <tr><td>Mean</td><td>{{ column.right_profile.list_profile.length_stats.mean | format_number(false) }}</td></tr>
+                              <tr><td>Median</td><td>{{ column.right_profile.list_profile.length_stats.median | format_number(false) }}</td></tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    {% endif %}
 
                     {% if column.right_profile.numeric_profile %}
                       {% set right_integer = column.right_profile.numeric_profile.is_integer %}
@@ -777,6 +825,22 @@
                       <div class="meta-row"><span>Distinct</span><span>{{ column.unique_count }}</span></div>
                       <div class="meta-row"><span>Zeroes</span><span>{{ column.zero_count }}</span></div>
                     </div>
+
+                    {% if column.list_profile %}
+                      <div class="variable-stats-grid">
+                        <div class="stats-block">
+                          <div class="panel-title">List length</div>
+                          <table class="table-base text-sm">
+                            <tbody class="divide-y divide-slate-100">
+                              <tr><td>Min</td><td>{{ column.list_profile.length_stats.minimum }}</td></tr>
+                              <tr><td>Max</td><td>{{ column.list_profile.length_stats.maximum }}</td></tr>
+                              <tr><td>Mean</td><td>{{ column.list_profile.length_stats.mean | format_number(false) }}</td></tr>
+                              <tr><td>Median</td><td>{{ column.list_profile.length_stats.median | format_number(false) }}</td></tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    {% endif %}
 
                     {% if column.numeric_profile %}
                       <div class="variable-stats-grid">
@@ -1158,6 +1222,22 @@
                       <div class="meta-row"><span>Distinct</span><span>{{ column.unique_count }}</span></div>
                       <div class="meta-row"><span>Zeroes</span><span>{{ column.zero_count }}</span></div>
                     </div>
+
+                    {% if column.list_profile %}
+                      <div class="variable-stats-grid">
+                        <div class="stats-block">
+                          <div class="panel-title">List length</div>
+                          <table class="table-base text-sm">
+                            <tbody class="divide-y divide-slate-100">
+                              <tr><td>Min</td><td>{{ column.list_profile.length_stats.minimum }}</td></tr>
+                              <tr><td>Max</td><td>{{ column.list_profile.length_stats.maximum }}</td></tr>
+                              <tr><td>Mean</td><td>{{ column.list_profile.length_stats.mean | format_number(false) }}</td></tr>
+                              <tr><td>Median</td><td>{{ column.list_profile.length_stats.median | format_number(false) }}</td></tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    {% endif %}
 
                     {% if column.numeric_profile %}
                       <div class="variable-stats-grid">

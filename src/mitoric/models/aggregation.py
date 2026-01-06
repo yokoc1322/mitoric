@@ -146,6 +146,19 @@ class TextProfile:
 
 
 @dataclass(frozen=True)
+class ListLengthStats:
+    mean: float
+    median: float
+    minimum: int
+    maximum: int
+
+
+@dataclass(frozen=True)
+class ListProfile:
+    length_stats: ListLengthStats
+
+
+@dataclass(frozen=True)
 class DatetimeValueCount:
     value: str
     count: int
@@ -172,6 +185,7 @@ class ColumnProfile:
     categorical_profile: CategoricalProfile | None = None
     text_profile: TextProfile | None = None
     datetime_profile: DatetimeProfile | None = None
+    list_profile: ListProfile | None = None
 
 
 @dataclass(frozen=True)

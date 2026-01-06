@@ -16,6 +16,8 @@ from mitoric.models.aggregation import (
     Histogram,
     HistogramBin,
     LabeledHistogram,
+    ListLengthStats,
+    ListProfile,
     NumericProfile,
     NumericStats,
     NumericValueCount,
@@ -158,6 +160,14 @@ _EXPECTED_SINGLE_SCHEMA = {
                     }
                 ],
                 "top_values": [{"value": "value", "count": "value"}],
+            },
+            "list_profile": {
+                "length_stats": {
+                    "mean": "value",
+                    "median": "value",
+                    "minimum": "value",
+                    "maximum": "value",
+                }
             },
         }
     ],
@@ -334,6 +344,19 @@ def _sample_column_profiles() -> list[ColumnProfile]:
             column_name=ColumnName("datetime"),
             data_type=ColumnType.DATETIME,
             datetime_profile=_sample_datetime_profile(),
+            **base_args,
+        ),
+        ColumnProfile(
+            column_name=ColumnName("list"),
+            data_type=ColumnType.LIST,
+            list_profile=ListProfile(
+                length_stats=ListLengthStats(mean=2.0, median=2.0, minimum=1, maximum=3)
+            ),
+            **base_args,
+        ),
+        ColumnProfile(
+            column_name=ColumnName("struct"),
+            data_type=ColumnType.STRUCT,
             **base_args,
         ),
     ]

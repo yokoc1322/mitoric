@@ -18,6 +18,7 @@ from mitoric.models.base import (
 from mitoric.profiling.compare.histograms import build_compare_histograms_for_column
 from mitoric.profiling.profiles.categorical import build_categorical_profile
 from mitoric.profiling.profiles.datetime import build_datetime_profile
+from mitoric.profiling.profiles.list_profile import build_list_profile
 from mitoric.profiling.profiles.numeric import build_numeric_profile
 from mitoric.profiling.profiles.text import build_text_profile
 from mitoric.profiling.utils.type_utils import (
@@ -67,6 +68,7 @@ def profile_columns(
         categorical_profile = None
         text_profile = None
         datetime_profile = None
+        list_profile = None
 
         if include_details:
             if data_type == ColumnType.NUMERIC:
@@ -85,6 +87,8 @@ def profile_columns(
                 text_profile = build_text_profile(series.drop_nulls().cast(pl.Utf8))
             elif data_type == ColumnType.DATETIME:
                 datetime_profile = build_datetime_profile(series.drop_nulls())
+            elif data_type == ColumnType.LIST:
+                list_profile = build_list_profile(series)
 
         profiles.append(
             ColumnProfile(
@@ -99,6 +103,7 @@ def profile_columns(
                 categorical_profile=categorical_profile,
                 text_profile=text_profile,
                 datetime_profile=datetime_profile,
+                list_profile=list_profile,
             )
         )
 

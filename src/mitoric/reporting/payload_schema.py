@@ -132,6 +132,17 @@ class TextProfilePayload(TypedDict):
     length_histograms: list[HistogramPayload]
 
 
+class ListLengthStatsPayload(TypedDict):
+    mean: float
+    median: float
+    minimum: int
+    maximum: int
+
+
+class ListProfilePayload(TypedDict):
+    length_stats: ListLengthStatsPayload
+
+
 class DatetimeValueCountPayload(TypedDict):
     value: str
     count: int
@@ -156,6 +167,7 @@ class ColumnProfilePayload(TypedDict):
     categorical_profile: CategoricalProfilePayload | None
     text_profile: TextProfilePayload | None
     datetime_profile: DatetimeProfilePayload | None
+    list_profile: ListProfilePayload | None
 
 
 class CompareColumnProfilePayload(TypedDict):
