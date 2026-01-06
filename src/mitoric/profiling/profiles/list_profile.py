@@ -9,7 +9,10 @@ from mitoric.models.aggregation import ListLengthStats, ListProfile
 
 def build_list_profile(values: pl.Series) -> ListProfile:
     series = values.drop_nulls()
-    lengths = series.list.len()
+    list_values = (
+        series.arr.to_list() if str(series.dtype).startswith("Array") else series
+    )
+    lengths = list_values.list.len()
 
     if lengths.is_empty():
         length_stats = ListLengthStats(mean=0.0, median=0.0, minimum=0, maximum=0)

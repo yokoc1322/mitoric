@@ -8,7 +8,11 @@ import polars as pl
 
 from mitoric.models.aggregation import Association, AssociationSummary
 from mitoric.models.base import AssociationValue, ColumnName, ColumnType
-from mitoric.profiling.utils.type_utils import classify_column_type
+from mitoric.profiling.utils.type_utils import (
+    classify_column_type,
+    needs_basic_statistics_only,
+    normalize_numeric_series,
+)
 
 _TOP_ASSOCIATIONS = 20
 _MAX_ASSOCIATION_ROWS = 50_000
@@ -94,16 +98,24 @@ def compute_associations(frame: pl.DataFrame) -> AssociationSummary:
     frame = _limit_association_rows(frame)
     numeric_columns: list[str] = []
     categorical_columns: list[str] = []
+    numeric_overrides: list[pl.Series] = []
 
     for name in frame.columns:
         series = frame.get_column(name)
+        if needs_basic_statistics_only(series.dtype):
+            continue
         kind = classify_column_type(series)
         if kind == ColumnType.BOOLEAN:
             kind = ColumnType.CATEGORICAL
         if kind == ColumnType.NUMERIC:
             numeric_columns.append(name)
+            normalized_series, _ = normalize_numeric_series(series)
+            numeric_overrides.append(normalized_series.rename(name))
         elif kind == ColumnType.CATEGORICAL:
             categorical_columns.append(name)
+
+    if numeric_overrides:
+        frame = frame.with_columns(numeric_overrides)
 
     numeric_numeric: list[Association] = []
     categorical_categorical: list[Association] = []
@@ -143,7 +155,10 @@ def compute_associations(frame: pl.DataFrame) -> AssociationSummary:
             )
 
     def _top(entries: list[Association]) -> list[Association]:
-        ordered = sorted(entries, key=lambda item: item.value, reverse=True)
+        ordered = sorted(
+            entries,
+            key=lambda item: (-float(item.value), str(item.left), str(item.right)),
+        )
         return ordered[:_TOP_ASSOCIATIONS]
 
     return AssociationSummary(

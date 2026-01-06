@@ -22,3 +22,18 @@ def test_classify_column_type_for_text_threshold() -> None:
     values = [f"value-{index}" for index in range(101)]
     series = pl.Series("text", values)
     assert classify_column_type(series) == ColumnType.TEXT
+
+
+def test_infer_column_type_for_extended_polars_dtypes() -> None:
+    assert (
+        infer_column_type(pl.Series("time", [dt.time(1, 2)], dtype=pl.Time))
+        == ColumnType.DATETIME
+    )
+    duration = pl.Series("duration", [dt.timedelta(days=1)], dtype=pl.Duration)
+    assert infer_column_type(duration) == ColumnType.NUMERIC
+    binary_series = pl.Series("binary", [b"a", b"bc"], dtype=pl.Binary)
+    assert infer_column_type(binary_series) == ColumnType.NUMERIC
+    array_series = pl.Series("array", [[1, 2, 3]], dtype=pl.Array(pl.Int64, 3))
+    assert infer_column_type(array_series) == ColumnType.LIST
+    enum_series = pl.Series("enum", ["x", "y"], dtype=pl.Enum(["x", "y"]))
+    assert infer_column_type(enum_series) == ColumnType.CATEGORICAL
