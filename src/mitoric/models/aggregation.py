@@ -156,6 +156,8 @@ class ListLengthStats:
 @dataclass(frozen=True)
 class ListProfile:
     length_stats: ListLengthStats
+    length_histograms: list[Histogram] = field(default_factory=list)
+    value_samples: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -186,6 +188,7 @@ class ColumnProfile:
     text_profile: TextProfile | None = None
     datetime_profile: DatetimeProfile | None = None
     list_profile: ListProfile | None = None
+    value_samples: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)

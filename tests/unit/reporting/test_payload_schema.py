@@ -82,6 +82,7 @@ _EXPECTED_SINGLE_SCHEMA = {
             "null_rate": "value",
             "unique_count": "value",
             "zero_count": "value",
+            "value_samples": ["value"],
             "numeric_profile": {
                 "is_integer": "value",
                 "stats": {
@@ -167,7 +168,20 @@ _EXPECTED_SINGLE_SCHEMA = {
                     "median": "value",
                     "minimum": "value",
                     "maximum": "value",
-                }
+                },
+                "length_histograms": [
+                    {
+                        "bin_count": "value",
+                        "bins": [
+                            {
+                                "lower": "value",
+                                "upper": "value",
+                                "count": "value",
+                            }
+                        ],
+                    }
+                ],
+                "value_samples": ["value"],
             },
         }
     ],
@@ -299,6 +313,18 @@ def _sample_text_profile() -> TextProfile:
     )
 
 
+def _sample_list_profile() -> ListProfile:
+    histogram = Histogram(
+        bin_count=2,
+        bins=[HistogramBin(lower=1.0, upper=2.0, count=3)],
+    )
+    return ListProfile(
+        length_stats=ListLengthStats(mean=2.0, median=2.0, minimum=1, maximum=3),
+        length_histograms=[histogram],
+        value_samples=["[1, 2]", "[3]"],
+    )
+
+
 def _sample_datetime_profile() -> DatetimeProfile:
     histogram = LabeledHistogram(
         bin_count=2,
@@ -349,14 +375,13 @@ def _sample_column_profiles() -> list[ColumnProfile]:
         ColumnProfile(
             column_name=ColumnName("list"),
             data_type=ColumnType.LIST,
-            list_profile=ListProfile(
-                length_stats=ListLengthStats(mean=2.0, median=2.0, minimum=1, maximum=3)
-            ),
+            list_profile=_sample_list_profile(),
             **base_args,
         ),
         ColumnProfile(
             column_name=ColumnName("struct"),
             data_type=ColumnType.STRUCT,
+            value_samples=["{'a': 1}", "{'b': 2}"],
             **base_args,
         ),
     ]
