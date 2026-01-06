@@ -9,8 +9,9 @@ from tests.e2e.example_reports import build_example_reports
 pytestmark = pytest.mark.e2e
 
 
-def test_example_outputs_are_generated(tmp_path: Path) -> None:
-    output_dir = tmp_path / "output"
+def test_example_outputs_are_generated() -> None:
+    output_dir = Path(__file__).resolve().parents[2] / "examples" / "output"
+    # Keep the outputs in-repo so local/CI runs surface any unexpected changes.
 
     single_html, compare_html = build_example_reports(output_dir)
 
