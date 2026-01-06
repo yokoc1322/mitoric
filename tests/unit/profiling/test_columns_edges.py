@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime as dt
 
 import polars as pl
+import pytest
 
 from mitoric.models.base import ColumnName, ColumnType
 from mitoric.profiling.columns import profile_columns
@@ -170,3 +171,46 @@ def test_numeric_histogram_integer_edges() -> None:
     for bin in histogram.bins:
         assert float(bin.lower).is_integer()
         assert float(bin.upper).is_integer()
+
+
+def test_list_profile_with_length_stats() -> None:
+    frame = pl.DataFrame({"items": [[1, 2], [3], None]})
+
+    profiles = profile_columns(frame, target_columns=None, explicit_types=None)
+    profile_map = {profile.column_name: profile for profile in profiles}
+    list_profile = profile_map[ColumnName("items")]
+
+    assert list_profile.data_type == ColumnType.LIST
+    assert list_profile.non_null_count == 2
+    assert list_profile.null_count == 1
+    assert list_profile.unique_count == 3
+    assert list_profile.list_profile is not None
+    assert list_profile.list_profile.length_stats.minimum == 1
+    assert list_profile.list_profile.length_stats.maximum == 2
+    assert list_profile.list_profile.length_stats.mean == pytest.approx(1.5)
+    assert list_profile.list_profile.length_stats.median == pytest.approx(1.5)
+
+
+def test_struct_profile_limits_analysis() -> None:
+    frame = pl.DataFrame(
+        {
+            "info": [
+                {"a": 1, "b": "x"},
+                {"a": 2, "b": "y"},
+                None,
+            ]
+        }
+    )
+
+    profiles = profile_columns(frame, target_columns=None, explicit_types=None)
+    profile_map = {profile.column_name: profile for profile in profiles}
+    struct_profile = profile_map[ColumnName("info")]
+
+    assert struct_profile.data_type == ColumnType.STRUCT
+    assert struct_profile.non_null_count == 2
+    assert struct_profile.null_count == 1
+    assert struct_profile.unique_count == 3
+    assert struct_profile.numeric_profile is None
+    assert struct_profile.categorical_profile is None
+    assert struct_profile.text_profile is None
+    assert struct_profile.datetime_profile is None

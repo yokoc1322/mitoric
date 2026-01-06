@@ -17,6 +17,8 @@ class ColumnType(str, Enum):
     TEXT = "text"
     DATETIME = "datetime"
     BOOLEAN = "boolean"
+    LIST = "list"
+    STRUCT = "struct"
 
     @classmethod
     def from_raw(cls, value: ColumnType | str) -> ColumnType:

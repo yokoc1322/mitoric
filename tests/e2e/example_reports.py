@@ -13,12 +13,30 @@ _REFERENCE_DATE = dt.datetime(1912, 4, 14)
 
 
 def _enrich_example_frame(frame: pl.DataFrame) -> pl.DataFrame:
-    return frame.with_columns(
+    additional_columns = [
         pl.col("survived").cast(pl.Boolean).alias("survived"),
         (pl.lit(_REFERENCE_DATE) - pl.duration(days=pl.col("age") * 365.25)).alias(
             "birthdate"
         ),
-    )
+    ]
+
+    if {"sibsp", "parch", "fare"}.issubset(frame.columns):
+        additional_columns.append(
+            pl.struct(
+                siblings_spouses=pl.col("sibsp"),
+                parents_children=pl.col("parch"),
+                fare=pl.col("fare"),
+            ).alias("family_struct")
+        )
+
+    if {"sibsp", "parch", "survived"}.issubset(frame.columns):
+        additional_columns.append(
+            pl.concat_list(
+                [pl.col("sibsp"), pl.col("parch"), pl.col("survived")]
+            ).alias("voyage_notes")
+        )
+
+    return frame.with_columns(additional_columns)
 
 
 def _split_frame_by_survived(frame: pl.DataFrame) -> tuple[pl.DataFrame, pl.DataFrame]:

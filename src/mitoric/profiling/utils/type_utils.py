@@ -46,6 +46,10 @@ def classify_column_type(series: pl.Series) -> ColumnType:
         return ColumnType.BOOLEAN
     if dtype in (pl.Date, pl.Datetime, pl.Time):
         return ColumnType.DATETIME
+    if dtype == pl.List:
+        return ColumnType.LIST
+    if dtype == pl.Struct:
+        return ColumnType.STRUCT
     if is_numeric_dtype(dtype):
         return ColumnType.NUMERIC
     if dtype in (pl.Categorical, pl.Enum):
