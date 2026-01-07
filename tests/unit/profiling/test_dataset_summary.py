@@ -52,3 +52,21 @@ def test_dataset_summary_empty() -> None:
     assert summary.type_counts.text == 0
     assert summary.type_counts.datetime == 0
     assert summary.type_counts.boolean == 0
+
+
+def test_dataset_summary_with_list_struct_column() -> None:
+    frame = pl.DataFrame(
+        {
+            "nested": [
+                [{"id": 1, "label": "a"}, {"id": 2, "label": "b"}],
+                [{"id": 1, "label": "a"}, {"id": 2, "label": "b"}],
+                [{"id": 3, "label": "c"}],
+            ]
+        }
+    )
+
+    summary = summarize_dataset(frame, dataset_id="nested")
+
+    assert summary.row_count == 3
+    assert summary.column_count == 1
+    assert summary.duplicate_rows == 1
