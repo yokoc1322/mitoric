@@ -28,6 +28,17 @@ from mitoric.models.base import (
 from mitoric.profiling.utils.type_utils import classify_column_type, infer_column_type
 
 
+def _get_sortable_columns(frame: pl.DataFrame) -> list[str]:
+    """Return column names that can be used for uniqueness checks (sortable types)."""
+    sortable_columns = []
+    for name in frame.columns:
+        dtype = frame.get_column(name).dtype
+        # List and Struct types cannot be sorted in Polars
+        if not isinstance(dtype, (pl.List, pl.Struct)):
+            sortable_columns.append(name)
+    return sortable_columns
+
+
 def summarize_dataset(frame: pl.DataFrame, dataset_id: str) -> DatasetSummary:
     row_count = frame.height
     column_count = frame.width
@@ -37,9 +48,17 @@ def summarize_dataset(frame: pl.DataFrame, dataset_id: str) -> DatasetSummary:
     missing_cells = sum(int(value) for value in null_counts)
     missing_rate = missing_cells / total_cells if total_cells else 0.0
 
-    duplicate_rows = (
-        row_count - frame.unique(maintain_order=True).height if row_count else 0
-    )
+    # Exclude unsortable columns (List, Struct) for duplicate detection
+    sortable_cols = _get_sortable_columns(frame)
+    if row_count and sortable_cols:
+        subset_frame = frame.select(sortable_cols)
+        duplicate_rows = row_count - subset_frame.unique(maintain_order=True).height
+    elif row_count:
+        # All columns are unsortable (List/Struct only), use repr-based comparison
+        unique_rows = len({tuple(repr(v) for v in row) for row in frame.iter_rows()})
+        duplicate_rows = row_count - unique_rows
+    else:
+        duplicate_rows = 0
 
     type_counter: Counter[ColumnType] = Counter()
     for name in frame.columns:

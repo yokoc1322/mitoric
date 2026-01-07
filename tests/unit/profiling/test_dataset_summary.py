@@ -70,3 +70,45 @@ def test_dataset_summary_with_list_struct_column() -> None:
     assert summary.row_count == 3
     assert summary.column_count == 1
     assert summary.duplicate_rows == 1
+
+
+def test_dataset_summary_with_struct_containing_null_field() -> None:
+    """Test that Struct columns with Null-typed fields don't cause PanicException."""
+    frame = pl.DataFrame(
+        {
+            "data": [
+                {"id": "a", "container": None},
+                {"id": "b", "container": None},
+            ]
+        },
+        schema={
+            "data": pl.Struct({"id": pl.String, "container": pl.Null}),
+        },
+    )
+
+    summary = summarize_dataset(frame, dataset_id="null_field")
+
+    assert summary.row_count == 2
+    assert summary.column_count == 1
+    assert summary.duplicate_rows == 0
+
+
+def test_dataset_summary_with_mixed_sortable_and_unsortable_columns() -> None:
+    """Test duplicate detection when both sortable and List[Struct] columns exist."""
+    frame = pl.DataFrame(
+        {
+            "id": ["a", "b", "a"],
+            "items": [
+                [{"x": 1}, {"x": 2}],
+                [{"x": 3}],
+                [{"x": 1}, {"x": 2}],
+            ],
+        }
+    )
+
+    summary = summarize_dataset(frame, dataset_id="mixed")
+
+    assert summary.row_count == 3
+    assert summary.column_count == 2
+    # Duplicate detection uses sortable columns only (id), finds 1 duplicate
+    assert summary.duplicate_rows == 1
