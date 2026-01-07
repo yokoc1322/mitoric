@@ -8,12 +8,10 @@ from mitoric.models.base import ColumnType
 
 TEXT_CARDINALITY_THRESHOLD = 100
 _NUMERIC_DTYPES: tuple[object, ...] = (
-    pl.Float16,
     pl.Int8,
     pl.Int16,
     pl.Int32,
     pl.Int64,
-    pl.Int128,
     pl.UInt8,
     pl.UInt16,
     pl.UInt32,
@@ -28,7 +26,6 @@ _INTEGER_DTYPES: tuple[object, ...] = (
     pl.Int16,
     pl.Int32,
     pl.Int64,
-    pl.Int128,
     pl.UInt8,
     pl.UInt16,
     pl.UInt32,
@@ -39,8 +36,6 @@ _TEMPORAL_DTYPES: tuple[object, ...] = (pl.Date, pl.Datetime, pl.Time)
 _LIST_DTYPES: tuple[object, ...] = (pl.List, pl.Array)
 _STRING_DTYPES: tuple[object, ...] = (pl.Utf8, pl.String)
 _BASIC_ONLY_DTYPES: tuple[object, ...] = (
-    pl.BaseExtension,
-    pl.Extension,
     pl.Object,
     pl.Unknown,
     pl.Null,
@@ -112,18 +107,24 @@ def is_binary_dtype(dtype: pl.DataType) -> bool:
     return dtype == pl.Binary or str(dtype).startswith("Binary")
 
 
-def needs_basic_statistics_only(dtype: pl.DataType) -> bool:
-    base_extension = getattr(pl, "BaseExtension", None)
-    extension = getattr(pl, "Extension", None)
-    target_dtypes = list(_BASIC_ONLY_DTYPES)
-    if base_extension is not None:
-        target_dtypes.append(base_extension)
-    if extension is not None:
-        target_dtypes.append(extension)
-    dtype_name = str(dtype)
-    return _matches_dtype(dtype, tuple(target_dtypes)) or dtype_name.startswith(
-        "Unknown"
+def _is_known_dtype(dtype: pl.DataType) -> bool:
+    return (
+        dtype == pl.Boolean
+        or dtype == pl.Struct
+        or is_temporal_dtype(dtype)
+        or is_list_dtype(dtype)
+        or is_numeric_dtype(dtype)
+        or is_categorical_dtype(dtype)
+        or is_binary_dtype(dtype)
+        or is_string_dtype(dtype)
     )
+
+
+def needs_basic_statistics_only(dtype: pl.DataType) -> bool:
+    dtype_name = str(dtype)
+    if _matches_dtype(dtype, _BASIC_ONLY_DTYPES) or dtype_name.startswith("Unknown"):
+        return True
+    return not _is_known_dtype(dtype)
 
 
 def normalize_numeric_series(series: pl.Series) -> tuple[pl.Series, bool]:
