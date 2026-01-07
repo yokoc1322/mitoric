@@ -37,7 +37,9 @@ def summarize_dataset(frame: pl.DataFrame, dataset_id: str) -> DatasetSummary:
     missing_cells = sum(int(value) for value in null_counts)
     missing_rate = missing_cells / total_cells if total_cells else 0.0
 
-    duplicate_rows = row_count - frame.unique().height if row_count else 0
+    duplicate_rows = (
+        row_count - frame.unique(maintain_order=True).height if row_count else 0
+    )
 
     type_counter: Counter[ColumnType] = Counter()
     for name in frame.columns:
