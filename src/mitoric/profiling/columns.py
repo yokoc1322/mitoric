@@ -40,11 +40,19 @@ def _apply_explicit_type(
 
 
 def _unique_count(series: pl.Series) -> int:
+    # Struct/List types with Null fields may cause PanicException (inherits BaseException)
+    if isinstance(series.dtype, (pl.Struct, pl.List)):
+        raw_values = series.to_list()
+        has_null = any(v is None for v in raw_values)
+        non_null_reprs = {repr(v) for v in raw_values if v is not None}
+        return len(non_null_reprs) + (1 if has_null else 0)
     try:
         return series.n_unique()
-    except pl.exceptions.InvalidOperationError:
-        values = [repr(value) for value in series.to_list() if value is not None]
-        return len(set(values))
+    except Exception:
+        raw_values = series.to_list()
+        has_null = any(v is None for v in raw_values)
+        non_null_reprs = {repr(v) for v in raw_values if v is not None}
+        return len(non_null_reprs) + (1 if has_null else 0)
 
 
 def profile_columns(

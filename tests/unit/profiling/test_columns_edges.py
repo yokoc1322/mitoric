@@ -258,3 +258,52 @@ def test_array_column_uses_list_profile() -> None:
     assert array_profile.data_type == ColumnType.LIST
     assert array_profile.list_profile is not None
     assert array_profile.list_profile.length_stats.minimum == 2
+
+
+def test_struct_with_null_field_unique_count() -> None:
+    """Test that Struct columns with Null-typed fields don't cause PanicException in n_unique."""
+    frame = pl.DataFrame(
+        {
+            "data": [
+                {"id": "a", "container": None},
+                {"id": "b", "container": None},
+                {"id": "a", "container": None},
+                None,
+            ]
+        },
+        schema={
+            "data": pl.Struct({"id": pl.String, "container": pl.Null}),
+        },
+    )
+
+    profiles = profile_columns(frame, target_columns=None, explicit_types=None)
+    profile_map = {profile.column_name: profile for profile in profiles}
+    struct_profile = profile_map[ColumnName("data")]
+
+    assert struct_profile.data_type == ColumnType.STRUCT
+    assert struct_profile.unique_count == 3  # 2 unique non-null + 1 null
+    assert struct_profile.null_count == 1
+    assert struct_profile.non_null_count == 3
+
+
+def test_list_of_struct_unique_count() -> None:
+    """Test that List[Struct] columns don't cause InvalidOperationError in n_unique."""
+    frame = pl.DataFrame(
+        {
+            "items": [
+                [{"id": 1, "name": "a"}, {"id": 2, "name": "b"}],
+                [{"id": 1, "name": "a"}, {"id": 2, "name": "b"}],
+                [{"id": 3, "name": "c"}],
+                None,
+            ]
+        }
+    )
+
+    profiles = profile_columns(frame, target_columns=None, explicit_types=None)
+    profile_map = {profile.column_name: profile for profile in profiles}
+    list_profile = profile_map[ColumnName("items")]
+
+    assert list_profile.data_type == ColumnType.LIST
+    assert list_profile.unique_count == 3  # 2 unique non-null + 1 null
+    assert list_profile.null_count == 1
+    assert list_profile.non_null_count == 3
