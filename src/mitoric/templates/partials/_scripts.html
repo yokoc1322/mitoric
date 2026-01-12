@@ -33,7 +33,17 @@
             tooltip: {
               callbacks: {
                 title: (items) => (items[0] ? items[0].label : ''),
-                label: (context) => `Count: ${context.parsed.y}`,
+                label: (context) => {
+                  const dataset = context.dataset || {};
+                  const originalCounts = dataset.originalCounts || [];
+                  const count = originalCounts[context.dataIndex] ?? 0;
+                  const percent = (context.parsed.y || 0) * 100;
+                  const formattedPercent =
+                    Number.isFinite(percent) && percent > 0
+                      ? percent.toFixed(1).replace(/\.0$/, '')
+                      : '0';
+                  return `Count: ${count} (${formattedPercent}%)`;
+                },
               },
             },
           },
@@ -52,6 +62,7 @@
               beginAtZero: true,
               ticks: {
                 color: '#94a3b8',
+                callback: (value) => `${(value * 100).toFixed(0)}%`,
               },
               grid: {
                 color: 'rgba(148, 163, 184, 0.15)',
@@ -60,6 +71,16 @@
           },
         },
       });
+
+    const sumCounts = (counts) => counts.reduce((total, value) => total + value, 0);
+
+    const toRatioCounts = (counts) => {
+      const total = sumCounts(counts);
+      if (!total) {
+        return counts.map(() => 0);
+      }
+      return counts.map((value) => value / total);
+    };
 
     const buildDatasets = (container, binData) => {
       if (!binData) {
@@ -72,12 +93,15 @@
       if (binData.left_counts || binData.right_counts) {
         const leftLabel = container.getAttribute('data-left-label') || 'Left';
         const rightLabel = container.getAttribute('data-right-label') || 'Right';
+        const leftCounts = binData.left_counts || [];
+        const rightCounts = binData.right_counts || [];
         return {
           labels: binData.labels || [],
           datasets: [
             {
               label: leftLabel,
-              data: binData.left_counts || [],
+              data: toRatioCounts(leftCounts),
+              originalCounts: leftCounts,
               backgroundColor: 'rgba(56, 189, 248, 0.65)',
               borderColor: 'rgba(56, 189, 248, 0.9)',
               borderWidth: 1,
@@ -86,7 +110,8 @@
             },
             {
               label: rightLabel,
-              data: binData.right_counts || [],
+              data: toRatioCounts(rightCounts),
+              originalCounts: rightCounts,
               backgroundColor: 'rgba(249, 115, 22, 0.6)',
               borderColor: 'rgba(249, 115, 22, 0.9)',
               borderWidth: 1,
@@ -97,11 +122,13 @@
           showLegend: true,
         };
       }
+      const counts = binData.counts || [];
       return {
         labels: binData.labels || [],
         datasets: [
           {
-            data: binData.counts || [],
+            data: toRatioCounts(counts),
+            originalCounts: counts,
             backgroundColor: 'rgba(56, 189, 248, 0.75)',
             borderColor: 'rgba(14, 116, 144, 0.9)',
             borderWidth: 1,
