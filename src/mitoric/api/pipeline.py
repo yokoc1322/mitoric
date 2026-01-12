@@ -58,6 +58,14 @@ def _normalize_save_path(save_path: str | None) -> SavePath:
     return SavePath(save_path)
 
 
+def _write_report(save_path: SavePath, html: str) -> None:
+    if not save_path:
+        return
+    output_path = Path(save_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(html, encoding="utf-8")
+
+
 def _normalize_compare_label(label: str | None, default: str) -> DatasetId:
     if label is None:
         return DatasetId(default)
@@ -240,8 +248,7 @@ class ReportPipeline:
             histogram_bins=self._histogram_bins,
         )
         html = render_report(self._template_path, payload)
-        if request.save_path:
-            Path(request.save_path).write_text(html, encoding="utf-8")
+        _write_report(request.save_path, html)
 
         _log_info_end("generate_single_report", start)
         return html
@@ -292,8 +299,7 @@ class ReportPipeline:
             histogram_bins=self._histogram_bins,
         )
         html = render_report(self._template_path, payload)
-        if request.save_path:
-            Path(request.save_path).write_text(html, encoding="utf-8")
+        _write_report(request.save_path, html)
 
         _log_info_end("generate_compare_report", start)
         return html
